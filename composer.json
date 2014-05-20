@@ -1,0 +1,21 @@
+{
+  "name": "papaya/module-community",
+  "minimum-stability": "dev",
+  "extra" : {
+    "document-root" : "htdocs/"
+  },
+  "require": {
+    "papaya/cms-core": "*"
+  },
+  "require-dev": {
+    "papaya/cms-administration": "*",
+    "papaya/template-responsive": "*",
+    "papaya/theme-dynamic": "*"
+  },
+  "repositories": [
+    {
+      "type": "composer",
+      "url": "http://composer.dev.dim/"
+    }
+  ]
+}
