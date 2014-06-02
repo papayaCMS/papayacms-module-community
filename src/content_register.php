@@ -14,7 +14,7 @@
 *
 * @package Papaya-Modules
 * @subpackage _Base-Community
-* @version $Id: content_register.php 39813 2014-05-12 15:12:21Z weinert $
+* @version $Id: content_register.php 39840 2014-05-26 15:21:20Z kersken $
 */
 
 /**
@@ -660,6 +660,15 @@ class content_register extends base_content {
           'User did not agree to the terms.',
           'You must agree to the terms'
         ),
+        'error_check_external' => array(
+          'External check error',
+          'isNoHTML',
+          TRUE,
+          'input',
+          200,
+          'One of the custom checks from onBeforeRegisterSurfer() went wrong.',
+          'An (external) error has occurred.'
+        ),
         'error_mail_send' => array(
           'Mail send',
           'isNoHTML',
@@ -1174,7 +1183,23 @@ class content_register extends base_content {
        ) {
       $termsAgreed = TRUE;
     }
-    if ($this->outputDialog->checkDialogInput() && $termsAgreed) {
+    $externallyCorrect = TRUE;
+    $actionsObj = $this->papaya()->plugins->get(
+      '79f18e7c40824a0f975363346716ff62', $this
+    );
+    $externalCheck = $actionsObj->call(
+      'community',
+      'onBeforeRegisterSurfer',
+      $this->outputDialog->params
+    );
+    if (is_array($externalCheck)) {
+      foreach ($externalCheck as $guid => $value) {
+        if ($value === FALSE) {
+          $externallyCorrect = FALSE;
+        }
+      }
+    }
+    if ($this->outputDialog->checkDialogInput() && $termsAgreed && $externallyCorrect) {
       $this->determineSurferHandle();
       if (
         $this->data['email_confirmation'] == 0 ||
@@ -1456,6 +1481,9 @@ class content_register extends base_content {
     } else {
       if (!$termsAgreed) {
         $result .= $this->getErrorMessageXml($this->data['error_terms'], 'terms');
+      }
+      if (!$externallyCorrect) {
+        $result .= $this->getErrorMessageXml($this->data['error_check_external']);
       }
       if (isset($this->outputDialog->inputErrors)) {
         $errors = $this->outputDialog->inputErrors;
