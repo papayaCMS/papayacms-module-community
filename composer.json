@@ -11,11 +11,5 @@
     "papaya/cms-administration": "*",
     "papaya/template-responsive": "*",
     "papaya/theme-dynamic": "*"
-  },
-  "repositories": [
-    {
-      "type": "composer",
-      "url": "http://composer.dev.dim/"
-    }
-  ]
+  }
 }
