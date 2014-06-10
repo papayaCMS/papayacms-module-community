@@ -1,5 +1,7 @@
 {
   "name": "papaya/module-community",
+  "license": "GPL-2.0",
+  "homepage": "http://www.papaya-cms.com/",
   "minimum-stability": "dev",
   "extra" : {
     "document-root" : "htdocs/"
@@ -8,8 +10,8 @@
     "papaya/cms-core": "*"
   },
   "require-dev": {
+    "papaya/test-framework": "*",
     "papaya/cms-administration": "*",
-    "papaya/template-responsive": "*",
     "papaya/theme-dynamic": "*"
   }
 }
