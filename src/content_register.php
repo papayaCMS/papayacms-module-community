@@ -14,7 +14,7 @@
 *
 * @package Papaya-Modules
 * @subpackage _Base-Community
-* @version $Id: content_register.php 39870 2014-07-04 12:23:38Z kersken $
+* @version $Id: content_register.php 39872 2014-07-04 12:38:35Z kersken $
 */
 
 /**
@@ -751,7 +751,7 @@ class content_register extends base_content {
         ),
         'delay_subject' => array(
           'Subject',
-          'isNoHTML',
+          'isSomeText',
           FALSE,
           'input',
           200,
@@ -760,7 +760,7 @@ class content_register extends base_content {
         ),
         'delay_message' => array(
           'Message',
-          'isNoHTML',
+          'isSomeText',
           FALSE,
           'textarea',
           7,
@@ -793,11 +793,11 @@ class content_register extends base_content {
           'Recipient email', 'isEmail', TRUE, 'input', 200, '', ''
         ),
         'notification_subject' => array(
-          'Subject', 'isNoHTML', TRUE, 'input', 200, '', 'New registration'
+          'Subject', 'isSomeText', TRUE, 'input', 200, '', 'New registration'
         ),
         'notification_message' => array(
           'Message',
-          'isNoHTML',
+          'isSomeText',
           TRUE,
           'textarea',
           10,
