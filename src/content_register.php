@@ -14,7 +14,7 @@
 *
 * @package Papaya-Modules
 * @subpackage _Base-Community
-* @version $Id: content_register.php 39840 2014-05-26 15:21:20Z kersken $
+* @version $Id: content_register.php 39870 2014-07-04 12:23:38Z kersken $
 */
 
 /**
@@ -718,10 +718,10 @@ class content_register extends base_content {
           '',
           'text'
         ),
-        'subject' => array('Subject', 'isNoHTML', TRUE, 'input', 200, '', 'Your registration'),
+        'subject' => array('Subject', 'isSomeText', TRUE, 'input', 200, '', 'Your registration'),
         'message' => array(
           'Message',
-          'isNoHTML',
+          'isSomeText',
           TRUE,
           'textarea',
           7,
