@@ -14,7 +14,7 @@
 *
 * @package Papaya-Modules
 * @subpackage _Base-Community
-* @version $Id: actbox_login.php 39734 2014-04-08 19:01:37Z weinert $
+* @version $Id: actbox_login.php 39952 2014-12-17 08:44:35Z kersken $
 */
 
 /**
@@ -46,6 +46,13 @@ class actionbox_login extends base_actionbox {
   * @var array $editFields
   */
   var $editFields = array(
+    'login_by' => array(
+      'Login by',
+      'isNum',
+      TRUE,
+      'combo',
+      array(0 => 'Email', 1 => 'Handle', 2 => 'Email or Handle')
+    ),
     'login_id' => array(
       'Page after login',
       'isNum',
@@ -127,8 +134,15 @@ class actionbox_login extends base_actionbox {
       100,
       'Optional (if not set, the login title will be used for logout as well)'
     ),
-    'text_login' => array('Login text', 'isNoHTML', TRUE, 'textarea', 5, '',
-      'Please log in'),
+    'text_login' => array(
+      'Login text',
+      'isNoHTML',
+      TRUE,
+      'textarea',
+      5,
+      '',
+      'Please log in'
+    ),
     'description_login' => array(
       'Login description',
       'isSomeText',
@@ -138,16 +152,42 @@ class actionbox_login extends base_actionbox {
       '',
       ' '
     ),
-    'text_logout' => array('Logout text', 'isNoHTML', TRUE, 'textarea', 5, '',
-      'You are logged in as'),
-    'text_register' => array('Registration text', 'isNoHTML', TRUE,
-      'textarea', 5, '', 'Please register'),
+    'text_logout' => array(
+      'Logout text',
+      'isNoHTML',
+      TRUE,
+      'textarea',
+      5,
+      '',
+      'You are logged in as'
+    ),
+    'text_register' => array(
+      'Registration text',
+      'isNoHTML',
+      TRUE,
+      'textarea',
+      5,
+      '',
+      'Please register'
+    ),
     'input_error_title' => array(
-      'Input error title', 'isNoHTML', TRUE, 'input', 200, '',
+      'Input error title',
+      'isNoHTML',
+      TRUE,
+      'input',
+      200,
+      '',
       'An error was occurred.'
     ),
-    'input_error' => array('Input error', 'isNoHTML', TRUE, 'input', 200, '',
-      'Email and/or password invalid.'),
+    'input_error' => array(
+      'Input error',
+      'isNoHTML',
+      TRUE,
+      'input',
+      200,
+      '',
+      'Email and/or password invalid.'
+    ),
     'Link captions',
     'linktext_lostpassword' => array(
       'Lost password',
@@ -168,14 +208,42 @@ class actionbox_login extends base_actionbox {
       'Register'
     ),
     'Other captions',
-    'caption_email' => array('Email', 'isAlphaNumChar', TRUE, 'input', 50, '',
-      'E-Mail'),
-    'caption_password' => array('Password', 'isAlphaNumChar', TRUE, 'input', 50, '',
-      'Password'),
-    'caption_login_button' => array('Login button', 'isAlphaNumChar', TRUE,
-      'input', 50, '', 'Login'),
-    'caption_logout_button' => array('Logout button', 'isAlphaNumChar', TRUE,
-      'input', 50, '', 'Logout')
+    'caption_login' => array(
+      'Login name',
+      'isAlphaNumChar',
+      TRUE,
+      'input',
+      50,
+      'Enter the translation for email, handle, or both, depending on login method',
+      'E-Mail'
+    ),
+    'caption_password' => array(
+      'Password',
+      'isAlphaNumChar',
+      TRUE,
+      'input',
+      50,
+      '',
+      'Password'
+    ),
+    'caption_login_button' => array(
+      'Login button',
+      'isAlphaNumChar',
+      TRUE,
+      'input',
+      50,
+      '',
+      'Login'
+    ),
+    'caption_logout_button' => array(
+      'Logout button',
+      'isAlphaNumChar',
+      TRUE,
+      'input',
+      50,
+      '',
+      'Logout'
+    )
   );
 
   /**
@@ -212,12 +280,28 @@ class actionbox_login extends base_actionbox {
             ? $this->parentObj->topic['TRANSLATION']['topic_title'] : NULL
         );
       }
-      $result .= $surferObj->getFormXML(
-        !($surferObj->isValid),
-        $this->getAbsoluteURL($logoutRedirectionLink),
-        papaya_strings::escapeHTMLChars($this->data['caption_email']),
-        papaya_strings::escapeHTMLChars($this->data['caption_password'])
-      );
+      if (isset($this->data['login_by']) && $this->data['login_by'] == 1) {
+        $result .= $surferObj->getHandleFormXML(
+          !($surferObj->isValid),
+          $this->getAbsoluteURL($logoutRedirectionLink),
+          papaya_strings::escapeHTMLChars($this->data['caption_login']),
+          papaya_strings::escapeHTMLChars($this->data['caption_password'])
+        );        
+      } elseif (isset($this->data['login_by']) && $this->data['login_by'] == 2) {
+        $result .= $surferObj->getEmailOrHandleFormXML(
+          !($surferObj->isValid),
+          $this->getAbsoluteURL($logoutRedirectionLink),
+          papaya_strings::escapeHTMLChars($this->data['caption_login']),
+          papaya_strings::escapeHTMLChars($this->data['caption_password'])
+        );
+      } else {
+        $result .= $surferObj->getFormXML(
+          !($surferObj->isValid),
+          $this->getAbsoluteURL($logoutRedirectionLink),
+          papaya_strings::escapeHTMLChars($this->data['caption_login']),
+          papaya_strings::escapeHTMLChars($this->data['caption_password'])
+        );
+      }
     } else {
       $loginId = empty($this->data['login_id']) ? 0 : (int)$this->data['login_id'];
       if ($loginId > 0) {
@@ -235,12 +319,28 @@ class actionbox_login extends base_actionbox {
             ? $this->parentObj->topic['TRANSLATION']['topic_title'] : NULL
         );
       }
-      $result .= $surferObj->getFormXML(
-        !($surferObj->isValid),
-        $this->getAbsoluteURL($loginRedirectionLink),
-        papaya_strings::escapeHTMLChars($this->data['caption_email']),
-        papaya_strings::escapeHTMLChars($this->data['caption_password'])
-      );
+      if (isset($this->data['login_by']) && $this->data['login_by'] == 1) {
+        $result .= $surferObj->getHandleFormXML(
+          !($surferObj->isValid),
+          $this->getAbsoluteURL($loginRedirectionLink),
+          papaya_strings::escapeHTMLChars($this->data['caption_login']),
+          papaya_strings::escapeHTMLChars($this->data['caption_password'])
+        );        
+      } elseif (isset($this->data['login_by']) && $this->data['login_by'] == 2) {
+        $result .= $surferObj->getEmailOrHandleFormXML(
+          !($surferObj->isValid),
+          $this->getAbsoluteURL($loginRedirectionLink),
+          papaya_strings::escapeHTMLChars($this->data['caption_login']),
+          papaya_strings::escapeHTMLChars($this->data['caption_password'])
+        );
+      } else {
+        $result .= $surferObj->getFormXML(
+          !($surferObj->isValid),
+          $this->getAbsoluteURL($loginRedirectionLink),
+          papaya_strings::escapeHTMLChars($this->data['caption_login']),
+          papaya_strings::escapeHTMLChars($this->data['caption_password'])
+        );
+      }
     }
 
     if ($surferObj->isValid) {
@@ -379,3 +479,4 @@ class actionbox_login extends base_actionbox {
     return $result;
   }
 }
+
