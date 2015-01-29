@@ -14,7 +14,7 @@
 *
 * @package Papaya-Modules
 * @subpackage _Base-Community
-* @version $Id: base_surfers_edit.php 39818 2014-05-13 13:15:13Z weinert $
+* @version $Id: base_surfers_edit.php 39962 2015-01-29 13:27:43Z kersken $
 */
 
 /**
@@ -278,6 +278,9 @@ class surfer_admin_edit extends surfer_admin {
       case 'find_surfers' :
         // Get search results and display them
         $this->showSurferResults($layout);
+        break;
+      case 'export_surfers':
+        $this->exportSurferResults();
         break;
       case 'add_apikey' :
         if (isset($this->params['id'])) {
@@ -7356,6 +7359,75 @@ class surfer_admin_edit extends surfer_admin {
     if ($str = $toolbar->getXML()) {
       $this->layout->addMenu(sprintf('<menu ident="%s">%s</menu>'.LF, 'edit', $str));
     }
+  }
+
+  /**
+  * Export advanced search results
+  *
+  */
+  function exportSurferResults() {
+    $result = $this->getSurferResults($this->params);
+    if (!is_array($result) || empty($result)) {
+      return;
+    }
+    $dynamicFieldNames = $this->getDataFieldNames();
+    $staticData = $this->loadSurfers($result);
+    $dynamicData = $this->getDynamicData($result, $dynamicFieldNames);
+    $agentString = strtolower(@$_SERVER["HTTP_USER_AGENT"]);
+    if (strpos($agentString, 'opera') !== FALSE) {
+      $agent = 'OPERA';
+    } elseif (strpos($agentString, 'msie') !== FALSE) {
+      $agent = 'IE';
+    } else {
+      $agent = 'STD';
+    }
+    $mimeType = ($agent == 'IE' || $agent == 'OPERA')
+      ? 'application/octetstream' : 'application/octet-stream';
+    $fileName = 'surfers_'.date('Y-m-d').'.csv';
+    if ($agent == 'IE') {
+      header('Content-Disposition: inline; filename="'.$fileName.'"');
+    } else {
+      header('Content-Disposition: attachment; filename="'.$fileName.'"');
+    }
+    header('Content-type: ' . $mimeType);
+    echo 'ID,Username,Realname,Email,Valid,Group,LastLogin,Editor';
+    foreach ($dynamicFieldNames as $name) {
+      echo ','.$this->escapeForCSV($name);
+    }
+    echo "\r\n";
+    foreach ($staticData as $surferId => $row) {
+      echo $this->escapeForCSV($row['surfer_id']).',';
+      echo $this->escapeForCSV($row['surfer_handle']).',';
+      echo $this->escapeForCSV(
+        $row['surfer_givenname'].' '.$row['surfer_surname']
+      ).',';
+      echo $this->escapeForCSV($row['surfer_email']).',';
+      echo $this->escapeForCSV($row['surfer_valid']).',';
+      $group = ($row['surfergroup_id'] > 0)
+        ? $this->groupList[$row['surfergroup_id']]['surfergroup_title'] : '-';
+      echo $this->escapeForCSV($group).',';
+      if ($row['surfer_lastlogin'] > 0) {
+        echo $this->escapeForCSV(date('Y-m-d H:i:s', $row['surfer_lastlogin'])).
+          ',';
+      } else {
+        echo $this->escapeForCSV(' ').',';
+      }
+      echo (($row['auth_user_id'] != '') ? 1 : 0);
+      if (isset($dynamicData[$surferId])) {
+        foreach ($dynamicFieldNames as $name) {
+          $value = '';
+          if (isset($dynamicData[$surferId][$name])) {
+            $value = $dynamicData[$surferId][$name];
+          }
+          if (is_array($value)) {
+            $value = implode(', ', $value);
+          }
+          echo ','.$this->escapeForCSV($value);
+        }
+      }
+      echo "\r\n";
+    }
+    exit;
   }
 
   /**

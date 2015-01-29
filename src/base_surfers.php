@@ -14,7 +14,7 @@
 *
 * @package Papaya-Modules
 * @subpackage _Base-Community
-* @version $Id: base_surfers.php 39818 2014-05-13 13:15:13Z weinert $
+* @version $Id: base_surfers.php 39962 2015-01-29 13:27:43Z kersken $
 */
 
 /**
@@ -3545,7 +3545,7 @@ class surfer_admin extends base_db {
     if (is_array($class) || $class > 0) {
       $sql .= " WHERE ".$this->databaseGetSQLCondition('surferdata_class', $class);
     }
-    $sqlParams = array($this->tableData, $class);
+    $sqlParams = array($this->tableData);
     $fieldNames = array();
     if ($res = $this->databaseQueryFmt($sql, $sqlParams)) {
       while ($row = $res->fetchRow(DB_FETCHMODE_ASSOC)) {
@@ -3753,6 +3753,113 @@ class surfer_admin extends base_db {
   }
 
   /**
+  * Get surfer search results
+  *
+  * @param NULL|array $parameters additional parameters
+  * @return array|int Array as a valid result, -1 for no criteria, -2 for no result.
+  */
+  function getSurferResults($parameters) {
+    $result = -2;
+    // If no parameters are set, use the current ones
+    if ($parameters == NULL) {
+      $parameters = $this->params;
+    }
+    // Search mode, default 'AND'
+    $searchMode = 'AND';
+    if (isset($parameters['searchmode']) && $parameters['searchmode'] == 'OR') {
+      $searchMode = 'OR';
+    }
+    // Search criteria ($condition => static; $criteria => dynamic)
+    $fieldList = 'surfer_id';
+    $condition = '';
+    $criteria = array();
+    if (isset($parameters)) {
+      // Valid static fields
+      $staticFields = array(
+        'static_surfer_handle',
+        'static_surfer_givenname',
+        'static_surfer_surname',
+        'static_surfer_email',
+        'static_surfer_gender',
+        'static_surfergroup_id',
+        'static_surfer_valid'
+      );
+      // Wildcards to replace
+      $sourceWildcards = array('*', '?');
+      $destWildcards = array('%', '_');
+      foreach ($parameters as $field => $value) {
+        if (preg_match('(^search_(\d+)$)', $field, $matches) && trim($value) != '') {
+          $fieldNum = $matches[1];
+          $value = addslashes($value);
+          $value = str_replace($sourceWildcards, $destWildcards, $value);
+          $criteria[$fieldNum] = $value;
+        } elseif (in_array($field, $staticFields)) {
+          if (($field == 'static_surfer_valid' && $value != -1) ||
+              ($field != 'static_surfer_valid' && $value != '')) {
+            $col = preg_replace('(^static_)', '', $field);
+            $fieldList .= ', '.$col;
+            if ($condition != '') {
+              $condition .= ' '.$searchMode.' ';
+            }
+            $value = addslashes($value);
+            $value = str_replace($sourceWildcards, $destWildcards, $value);
+            $condition .= sprintf("%s LIKE '%s'", $col, $value);
+          }
+        }
+      }
+    }
+    if (trim($condition == '') && empty($criteria)) {
+      return -1;
+    } else {
+      // Otherwise get and output the result
+      // Static data first
+      $searchStatic = FALSE;
+      $staticResult = array();
+      if (trim($condition) != '') {
+        $searchStatic = TRUE;
+        $sql = "SELECT %s
+                  FROM %s
+                 WHERE ".str_replace('%', '%%', $condition);
+        $sqlParams = array($fieldList, $this->tableSurfer);
+        if ($res = $this->databaseQueryFmt($sql, $sqlParams)) {
+          while ($row = $res->fetchRow(DB_FETCHMODE_ASSOC)) {
+            $staticResult[] = $row['surfer_id'];
+          }
+        }
+      }
+      // In AND mode, we already know that there is no match if this query is empty
+      if ($searchMode == 'AND' && $searchStatic == TRUE && empty($staticResult)) {
+        return -2;
+      }
+      // Now go for the dynamic data
+      $searchDynamic = FALSE;
+      $dynamicResult = array();
+      if (!empty($criteria)) {
+        $searchDynamic = TRUE;
+        $dynamicResult = $this->findSurfersByDynamicData($criteria, $searchMode);
+      }
+      // Combine the results according to search mode
+      if ($searchMode == 'AND') {
+        if ($searchStatic == TRUE) {
+          if ($searchDynamic == TRUE) {
+            $result = array_intersect($staticResult, $dynamicResult);
+          } else {
+            $result = $staticResult;
+          }
+        } else {
+          $result = $dynamicResult;
+        }
+      } else {
+        $result = array_unique(array_merge($staticResult, $dynamicResult));
+      }
+      if (empty($result)) {
+        return -2;
+      }
+    }
+    return $result;
+  }
+
+  /**
    * Show surfer search results.
    *
    * If the $links argument is set to TRUE, each of the surfer
@@ -3778,116 +3885,29 @@ class surfer_admin extends base_db {
    * @return array|null
    */
   function showSurferResults($layout, $links = TRUE, $params = NULL, $returnResults = FALSE) {
-    // If no params are set, use the current ones
-    if ($params == NULL) {
-      $params = $this->params;
-    }
-    // Search mode, default 'AND'
-    $searchMode = 'AND';
-    if (isset($params['searchmode']) && $params['searchmode'] == 'OR') {
-      $searchMode = 'OR';
-    }
-    // Search criteria ($condition => static; $criteria => dynamic)
-    $fieldList = 'surfer_id';
-    $condition = '';
-    $criteria = array();
-    if (isset($params)) {
-      // Valid static fields
-      $staticFields = array('static_surfer_handle',
-                            'static_surfer_givenname',
-                            'static_surfer_surname',
-                            'static_surfer_email',
-                            'static_surfer_gender',
-                            'static_surfergroup_id',
-                            'static_surfer_valid'
-                           );
-      // Wildcards to replace
-      $sourceWildcards = array('*', '?');
-      $destWildcards = array('%', '_');
-      foreach ($params as $field => $value) {
-        if (preg_match('~^search_(\d+)$~', $field, $matches) && trim($value) != '') {
-          $fieldNum = $matches[1];
-          $value = addslashes($value);
-          $value = str_replace($sourceWildcards, $destWildcards, $value);
-          $criteria[$fieldNum] = $value;
-        } elseif (in_array($field, $staticFields)) {
-          if (($field == 'static_surfer_valid' && $value != -1) ||
-              ($field != 'static_surfer_valid' && $value != '')) {
-            $col = preg_replace('~^static_~', '', $field);
-            $fieldList .= ', '.$col;
-            if ($condition != '') {
-              $condition .= ' '.$searchMode.' ';
-            }
-            $value = addslashes($value);
-            $value = str_replace($sourceWildcards, $destWildcards, $value);
-            $condition .= sprintf("%s LIKE '%s'", $col, $value);
-          }
-        }
-      }
-    }
-    if (trim($condition == '') && empty($criteria)) {
-      // Just output a message if there are no criteria
-      $this->addMsg(MSG_WARNING, $this->_gt('Please enter search criteria'));
-      return NULL;
-    } else {
-      // Otherwise get and output the result
-      // Static data first
-      $searchStatic = FALSE;
-      $staticResult = array();
-      if (trim($condition) != '') {
-        $searchStatic = TRUE;
-        $sql = "SELECT %s
-                  FROM %s
-                 WHERE ".str_replace('%', '%%', $condition);
-        $sqlParams = array($fieldList, $this->tableSurfer);
-        if ($res = $this->databaseQueryFmt($sql, $sqlParams)) {
-          while ($row = $res->fetchRow(DB_FETCHMODE_ASSOC)) {
-            $staticResult[] = $row['surfer_id'];
-          }
-        }
-      }
-      // In AND mode, we already know that there is no match if this query is empty
-      if ($searchMode == 'AND' && $searchStatic == TRUE && empty($staticResult)) {
-        $this->addMsg(MSG_INFO, $this->_gt('No surfers match your criteria.'));
-        return NULL;
-      }
-      // Now go for the dynamic data
-      $searchDynamic = FALSE;
-      $dynamicResult = array();
-      if (!empty($criteria)) {
-        $searchDynamic = TRUE;
-        $dynamicResult = $this->findSurfersByDynamicData($criteria, $searchMode);
-      }
-      // Combine the results according to search mode
-      if ($searchMode == 'AND') {
-        if ($searchStatic == TRUE) {
-          if ($searchDynamic == TRUE) {
-            $result = array_intersect($staticResult, $dynamicResult);
-          } else {
-            $result = $staticResult;
-          }
-        } else {
-          $result = $dynamicResult;
-        }
-      } else {
-        $result = array_unique(array_merge($staticResult, $dynamicResult));
-      }
-      if (empty($result)) {
-        // If no surfers match, output a message
-        $this->addMsg(MSG_INFO, $this->_gt('No surfers match your criteria.'));
-        return NULL;
-      }
+    $result = $this->getSurferResults($params);
+    if (is_array($result) && !empty($result)) {
       // Otherwise show the result
       $names = $this->loadSurferNames($result);
       $images = $this->papaya()->images;
-      $output = sprintf('<listview title="%s">', $this->_gt('Search results'));
-      $output .= '<cols>';
-      $output .= sprintf('<col>%s</col>', $this->_gt('Surfer'));
+      $output = sprintf('<listview title="%s">'.LF, $this->_gt('Search results'));
+      $output .= '<buttons>'.LF;
+      $params = empty($params) ? $this->params : $params;
+      $params['mode'] = 0;
+      $params['cmd'] = 'export_surfers';
+      $output .= sprintf(
+        '<button href="%s" title="%s" />'.LF,
+        $this->getLink($params),
+        $this->_gt('Export as CSV')
+      );
+      $output .= '</buttons>'.LF;
+      $output .= '<cols>'.LF;
+      $output .= sprintf('<col>%s</col>'.LF, $this->_gt('Surfer'));
       if ($links) {
-        $output .= '<col/>';
+        $output .= '<col/>'.LF;
       }
-      $output .= '</cols>';
-      $output .= '<items>';
+      $output .= '</cols>'.LF;
+      $output .= '<items>'.LF;
       foreach ($names as $id => $data) {
         $realNameStr = ($data['surfer_givenname'] != '' || $data['surfer_surname'] != '') ?
           sprintf('(%s %s)', $data['surfer_givenname'], $data['surfer_surname']) : '';
@@ -3896,7 +3916,7 @@ class surfer_admin extends base_db {
         );
         $link = ($links == TRUE) ? sprintf(' href="%s"', $href) : '';
         $output .= sprintf(
-          '<listitem title="%s %s" %s>',
+          '<listitem title="%s %s" %s>'.LF,
           $data['surfer_handle'],
           $realNameStr,
           $link
@@ -3911,17 +3931,21 @@ class surfer_admin extends base_db {
               $this->_gt('Send email to user using your email client.')
             );
           }
-          $output .= '</subitem>';
+          $output .= '</subitem>'.LF;
         }
-        $output .= '</listitem>';
+        $output .= '</listitem>'.LF;
       }
-      $output .= '</items>';
-      $output .= '</listview>';
+      $output .= '</items>'.LF;
+      $output .= '</listview>'.LF;
       $layout->add($output);
       // If we were asked for results, return them right here
       if ($returnResults) {
         return $result;
       }
+    } elseif ($result == -1) {
+      $this->addMsg(MSG_WARNING, $this->_gt('Please enter search criteria'));
+    } else {
+      $this->addMsg(MSG_INFO, $this->_gt('No surfers match your criteria.'));
     }
     return NULL;
   }
