@@ -3200,6 +3200,8 @@ class surfer_admin extends base_db {
       // Empty values must be empty strings, not NULL
       if (NULL === $value) {
         $value = '';
+      } elseif (is_array($value)) {
+        $value = serialize($value);
       }
       if (isset($fieldIds[$field]) && $fieldIds[$field]['relId'] != NULL) {
         // It exists, so it needs to be replaced
