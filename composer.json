@@ -7,7 +7,9 @@
     "document-root" : "htdocs/"
   },
   "require": {
-    "papaya/cms-core": "*"
+    "papaya/cms-core": "*",
+    "papaya/module-actions" : "*"
+
   },
   "require-dev": {
     "papaya/test-framework": "*",
