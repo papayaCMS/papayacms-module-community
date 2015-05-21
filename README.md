@@ -19,5 +19,5 @@ This is a module for [papaya CMS](https://github.com/papayaCMS/)
 Use Composer to install it:
 
 ```
-composer require papaya/module-community
+composer require papaya/module-community papaya/module-actions
 ```
