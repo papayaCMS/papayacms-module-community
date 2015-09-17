@@ -14,7 +14,7 @@
 *
 * @package Papaya-Modules
 * @subpackage _Base-Community
-* @version $Id: base_surfers_edit.php 39962 2015-01-29 13:27:43Z kersken $
+* @version $Id: base_surfers_edit.php 39981 2015-09-17 09:36:11Z kersken $
 */
 
 /**
@@ -2941,6 +2941,10 @@ class surfer_admin_edit extends surfer_admin {
     if (!isset($fieldValues)) {
       $fieldValues = '';
     }
+    if ($fieldType == 'callback' || $fieldType == 'callbackmultiple') {
+      $this->addMsg(MSG_INFO, 'Nothing to configure for this field type.');
+      return;
+    }
     if (trim($fieldValues) != '') {
       // Remove inappropriate values that might occur after field type changes
       if ($fieldType == 'input' || $fieldType == 'textarea') {
@@ -5405,6 +5409,42 @@ class surfer_admin_edit extends surfer_admin {
               );
             }
             break;
+          case 'callback':
+            $values = $this->actions()->call(
+              'community',
+              'onGetDynamicEditFields',
+              $row['surferdata_name'],
+              TRUE
+            );
+            if (!empty($values)) {
+              $fields[$row['surferdata_name']] = array(
+                $fieldTitle,
+                $row['surferdata_check'],
+                $row['surferdata_mandatory'],
+                'combo',
+                $values,
+                ''
+              );
+            }
+            break;
+          case 'callbackmultiple':
+            $values = $this->actions()->call(
+              'community',
+              'onGetDynamicEditFields',
+              $row['surferdata_name'],
+              TRUE
+            );
+            if (!empty($values)) {
+              $fields[$row['surferdata_name']] = array(
+                $fieldTitle,
+                $row['surferdata_check'],
+                $row['surferdata_mandatory'],
+                'checkgroup',
+                $values,
+                ''
+              );
+            }
+            break;
           }
           // Get data for current field, if available
           $isql = "SELECT sc.surfercontactdata_value
@@ -5420,7 +5460,8 @@ class surfer_admin_edit extends surfer_admin {
           );
           $ires = $this->databaseQueryFmt($isql, $idbParams);
           if ($irow = $ires->fetchRow(DB_FETCHMODE_ASSOC)) {
-            if ($row['surferdata_type'] == 'checkgroup') {
+            if ($row['surferdata_type'] == 'checkgroup' ||
+                $row['surferdata_type'] == 'callbackmultiple') {
               $data[$row['surferdata_name']] =
                 unserialize($irow['surfercontactdata_value']);
             } else {
@@ -8259,7 +8300,16 @@ class surfer_admin_edit extends surfer_admin {
       papaya_strings::escapeHTMLChars($this->paramName),
       papaya_strings::escapeHTMLChars($name)
     );
-    $values = array('input', 'textarea', 'combo', 'radio', 'checkgroup', 'function');
+    $values = array(
+      'input',
+      'textarea',
+      'combo',
+      'radio',
+      'checkgroup',
+      'function',
+      'callback',
+      'callbackmultiple'
+    );
     foreach ($values as $value) {
       $selected = ($data == $value) ? ' selected="selected"' : '';
       $result .= sprintf(
