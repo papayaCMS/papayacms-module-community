@@ -14,7 +14,7 @@
 *
 * @package Papaya-Modules
 * @subpackage _Base-Community
-* @version $Id: base_surfers_edit.php 39981 2015-09-17 09:36:11Z kersken $
+* @version $Id: base_surfers_edit.php 39989 2015-09-23 11:57:01Z kersken $
 */
 
 /**
@@ -1559,6 +1559,36 @@ class surfer_admin_edit extends surfer_admin {
   }
 
   /**
+  * Helper method to set multiple values only for the current range
+  *
+  * @param string $field
+  * @param array $values
+  * @param string $oldValue
+  * @return array
+  */
+  function setValueForRange($field, $values, $oldValue) {
+    $result = $values;
+    $range = $this->actions()->call(
+      'community',
+      'onGetDynamicEditFields',
+      $field,
+      TRUE
+    );
+    if (!empty($range)) {
+      $result = unserialize($oldValue);
+      foreach (array_keys($range) as $value) {
+        if (in_array($value, $values) && !in_array($value, $result)) {
+          $result[] = $value;
+        } elseif (!in_array($value, $values) && in_array($value, $result)) {
+          $key = array_search($value, $result);
+          unset($result[$key]);
+        }
+      }
+    }
+    return $result;
+  }
+
+  /**
   * Save Surfer profile
   *
   * Stores a surfer's dynamic profile data
@@ -1609,6 +1639,10 @@ class surfer_admin_edit extends surfer_admin {
           if ($irow = $ires->fetchRow(DB_FETCHMODE_ASSOC)) {
             $dataId = $irow['surfercontactdata_id'];
             $oldVal = $irow['surfercontactdata_value'];
+            if (is_array($value)) {
+              $value = serialize($this->setValueForRange($fieldName, $value, $oldVal));
+              $data['surfercontactdata_value'] = $value;
+            }
             // Did the value change at all?
             if ($value != $oldVal) {
               // Now here's a change
