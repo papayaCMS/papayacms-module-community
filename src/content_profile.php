@@ -1291,8 +1291,8 @@ class content_profile extends base_content {
               isset($this->profileForm->data['surfer_password3'])) {
             // verify old password before change
             $changeIsValid = $this->baseSurfers->passwordApi()->verifyPassword(
-              $this->surferData['surfer_password'],
-              $this->profileForm->data['surfer_password3']
+              $this->profileForm->data['surfer_password3'],
+              $this->surferData['surfer_password']
             );
           }
           if ($changeIsValid) {
