@@ -1936,13 +1936,24 @@ class surfer_admin_edit extends surfer_admin {
       }
     }
 
+    $additionalCondition = '';
+
+    $additionalFilter = $this->actions()->call(
+      'community',
+      'onLoadSurfers',
+      NULL
+    );
+    if (!empty($additionalFilter)) {
+      $additionalCondition = ' AND '.implode(' AND ', $additionalFilter);
+    }
+
     $sql = "SELECT surfer_id, surfer_handle, surfer_givenname, surfer_surname,
                    surfer_valid, surfer_status, surfer_email, surfergroup_id
               FROM %s
              WHERE (surfer_handle LIKE '%s'
                 OR (surfer_surname LIKE '%s' $nameOperator surfer_givenname LIKE '%s')
                 OR surfer_email LIKE '%s'
-                   ) $groupCondition $statusCondition $onlineCondition
+                   ) $groupCondition $statusCondition $onlineCondition $additionalCondition
              ORDER BY %s";
 
     $params = array(
