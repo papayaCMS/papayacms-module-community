@@ -1948,7 +1948,15 @@ class surfer_admin_edit extends surfer_admin {
       NULL
     );
     if (!empty($additionalFilter)) {
-      $additionalCondition = ' AND '.implode(' AND ', $additionalFilter);
+      $activeConditions = array();
+      foreach ($additionalFilter as $filter) {
+        if (!empty($filter)) {
+          $activeConditions[] = $filter;
+        }
+      }
+      if (!empty($activeConditions)) {
+        $additionalCondition = ' AND '.implode(' AND ', $activeConditions);
+      }
     }
 
     $sql = "SELECT surfer_id, surfer_handle, surfer_givenname, surfer_surname,
