@@ -1550,7 +1550,11 @@ class surfer_admin_edit extends surfer_admin {
     $user = $this->papaya()->administrationUser;
     $adminGroups = array(0, $user->user['group_id']);
     if (!empty($user->groups)) {
-      $adminGroups = array_merge($adminGroups, array_keys($user->groups));
+      foreach (array_keys($user->groups) as $group) {
+        if (!in_array($group, $adminGroups)) {
+          $adminGroups[] = $group;
+        }
+      }
     }
     if (in_array(-1, $adminGroups)) {
       $adminGroups = NULL;
