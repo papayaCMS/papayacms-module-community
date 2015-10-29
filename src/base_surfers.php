@@ -4267,8 +4267,25 @@ class surfer_admin extends base_db {
   * @return array $surfers Surfers result
   */
   function getFavoriteSurfers($withHandles = TRUE) {
+    $additionalCondition = '';
+    $additionalFilter = $this->actions()->call(
+      'community',
+      'onLoadFavoriteSurfers',
+      NULL
+    );
+    if (!empty($additionalFilter)) {
+      $activeConditions = array();
+      foreach ($additionalFilter as $filter) {
+        if (!empty($filter)) {
+          $activeConditions[] = $filter;
+        }
+      }
+      if (!empty($activeConditions)) {
+        $additionalCondition = ' WHERE '.implode(' AND ', $activeConditions);
+      }
+    }
     $sql = "SELECT favorite_surferid
-              FROM %s";
+              FROM %s ".str_replace('%', '%%', $additionalCondition);
     $sqlParams = array($this->tableFavorites);
     $surferIds = array();
     if ($res = $this->databaseQueryFmt($sql, $sqlParams)) {
