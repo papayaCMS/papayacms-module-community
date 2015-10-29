@@ -1622,6 +1622,25 @@ class surfer_admin_edit extends surfer_admin {
     if (sizeof($fields) > 0) {
       // Check data for each field
       foreach ($fields as $fieldName => $fieldId) {
+        $prohibited = $this->actions()->call(
+          'community',
+          'onSaveDynamicDataProhibited',
+          array($surferId, $fieldName)
+        );
+        $cannotSave = FALSE;
+        foreach ($prohibited as $isProhibited) {
+          if ($isProhibited === TRUE) {
+            $cannotSave = TRUE;
+            break;
+          }
+        }
+        if ($cannotSave) {
+          $this->addMsg(
+            MSG_ERROR,
+            sprintf($this->_gt('You do not have permission to change the field "%s".'), $fieldName)
+          );
+          continue;
+        }
         if (isset($this->params[$fieldName])) {
           $value = $this->params[$fieldName];
           // Prepare data for contact data table
