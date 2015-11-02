@@ -14,7 +14,7 @@
 *
 * @package Papaya-Modules
 * @subpackage _Base-Community
-* @version $Id: base_surfers_edit.php 39989 2015-09-23 11:57:01Z kersken $
+* @version $Id: base_surfers_edit.php 40011 2015-11-02 12:38:45Z kersken $
 */
 
 /**
@@ -1674,12 +1674,21 @@ class surfer_admin_edit extends surfer_admin {
               if (empty($value)) {
                 // Then delete existing record
                 $this->databaseDeleteRecord(
-                  $this->tableContactData, 'surfercontactdata_id', $dataId
+                  $this->tableContactData,
+                  array(
+                    'surfercontactdata_id' => $dataId,
+                    'surfercontactdata_surferid' => $surferId
+                  )
                 );
               } else {
                 // otherwise update existing field
                 $this->databaseUpdateRecord(
-                  $this->tableContactData, $data, 'surfercontactdata_id', $dataId
+                  $this->tableContactData,
+                  $data,
+                  array(
+                    'surfercontactdata_id' => $dataId,
+                    'surfercontactdata_surferid' => $surferId
+                  )
                 );
               }
             }
@@ -1699,11 +1708,50 @@ class surfer_admin_edit extends surfer_admin {
         } else {
           // If the field is not within the params, delete its value
           // (especially suitable for checkgroups in which nothing is selected)
-          $conditions = array(
-            'surfercontactdata_surferid' => $surferId,
-            'surfercontactdata_property' => $fieldId
+          // Special treatment for pre-filtered check groups required
+          $changes = TRUE;
+          $legalValues = $this->actions()->call(
+            'community',
+            'onGetDynamicEditFields',
+            $fieldName,
+            TRUE
           );
-          $this->databaseDeleteRecord($this->tableContactData, $conditions);
+          if (!empty($legalValues)) {
+            $isql = "SELECT surfercontactdata_id, surfercontactdata_value
+                     FROM %s
+                    WHERE surfercontactdata_property=%d
+                      AND surfercontactdata_surferid='%s'";
+            $ires = $this->databaseQueryFmt(
+              $isql,
+              array($this->tableContactData, $fieldId, $surferId)
+            );
+            $done = FALSE;
+            if ($irow = $ires->fetchRow(DB_FETCHMODE_ASSOC)) {
+              $dataId = $irow['surfercontactdata_id'];
+              $oldVal = $irow['surfercontactdata_value'];
+              if (!empty($oldVal)) {
+                $newValue = $this->setValueForRange($fieldName, array(), $oldVal);
+                if (!empty($newValue)) {
+                  $this->databaseUpdateRecord(
+                    $this->tableContactData,
+                    array('surfercontactdata_value' => serialize($newValue)),
+                    array(
+                      'surfercontactdata_id' => $dataId,
+                      'surfercontactdata_surferid' => $surferId
+                    )
+                  );
+                  $done = TRUE;
+                }
+              }
+            }
+          }
+          if (!$done) {
+            $conditions = array(
+              'surfercontactdata_surferid' => $surferId,
+              'surfercontactdata_property' => $fieldId
+            );
+            $this->databaseDeleteRecord($this->tableContactData, $conditions);
+          }
         }
       }
     }
@@ -1977,7 +2025,6 @@ class surfer_admin_edit extends surfer_admin {
         $additionalCondition = ' AND '.implode(' AND ', $activeConditions);
       }
     }
-
     $sql = "SELECT surfer_id, surfer_handle, surfer_givenname, surfer_surname,
                    surfer_valid, surfer_status, surfer_email, surfergroup_id
               FROM %s
