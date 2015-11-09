@@ -6407,7 +6407,7 @@ class surfer_admin_edit extends surfer_admin {
   *
   * @return string XML
   */
- function surfersFilter() {
+  function surfersFilter() {
     // Convenience shortcut for selected fields
     $selected = ' selected="seleceted"';
     // Prepare dialog
