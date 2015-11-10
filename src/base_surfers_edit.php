@@ -14,7 +14,7 @@
 *
 * @package Papaya-Modules
 * @subpackage _Base-Community
-* @version $Id: base_surfers_edit.php 40011 2015-11-02 12:38:45Z kersken $
+* @version $Id: base_surfers_edit.php 40016 2015-11-09 11:17:27Z afflerbach $
 */
 
 /**
@@ -6652,7 +6652,7 @@ class surfer_admin_edit extends surfer_admin {
     );
 
     for ($i = 0; $i < count($steps); $i++) {
-      if ($steps[$i]== $this->params['listlength']) {
+      if ($steps[$i] == $this->params['listlength']) {
         $str = 'selected="selected"';
       } else {
         $str = '';
