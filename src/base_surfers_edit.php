@@ -14,7 +14,7 @@
 *
 * @package Papaya-Modules
 * @subpackage _Base-Community
-* @version $Id: base_surfers_edit.php 40016 2015-11-09 11:17:27Z afflerbach $
+* @version $Id: base_surfers_edit.php 40017 2015-11-10 07:55:34Z afflerbach $
 */
 
 /**
