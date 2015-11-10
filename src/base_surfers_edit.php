@@ -14,7 +14,7 @@
 *
 * @package Papaya-Modules
 * @subpackage _Base-Community
-* @version $Id: base_surfers_edit.php 40011 2015-11-02 12:38:45Z kersken $
+* @version $Id: base_surfers_edit.php 40016 2015-11-09 11:17:27Z afflerbach $
 */
 
 /**
@@ -6639,24 +6639,32 @@ class surfer_admin_edit extends surfer_admin {
       papaya_strings::escapeHTMLChars($this->_gt('Surfers per page'))
     );
     $result .= '<line align="center">';
-    $steps = array(
-      '10' => $this->listLength = 10,
-      '20' => $this->listLength == 20,
-      '50' => $this->listLength == 50,
-      '100' => $this->listLength == 100
-    );
     $result .= sprintf(
       '<select name="%s[listlength]" class="dialogSelect dialogScale">'.LF,
       papaya_strings::escapeHTMLChars($this->paramName)
     );
-    foreach ($steps as $stepSize => $selected) {
+
+    $steps = array(
+      '10' ,
+      '20' ,
+      '50' ,
+      '100'
+    );
+
+    for ($i = 0; $i < count($steps); $i++) {
+      if ($steps[$i] == $this->params['listlength']) {
+        $str = 'selected="selected"';
+      } else {
+        $str = '';
+      }
       $result .= sprintf(
         '<option value="%d" %s>%d</option>'.LF,
-        (int)$stepSize,
-        $selected ? ' selected="selected"' : '',
-        (int)$stepSize
+        (int)$steps[$i],
+        $str,
+        (int)$steps[$i]
       );
     }
+
     $result .= '</select></line>'.LF;
     // Select group to display
     $result .= sprintf(
@@ -6812,7 +6820,7 @@ class surfer_admin_edit extends surfer_admin {
     if (isset($this->surfers) && is_array($this->surfers)) {
       $images = $this->papaya()->images;
       $shortSurf = $this->surfers;
-      $listLen = $this->listLength;
+      $listLen = $this->params['listlength'];
       $result .= sprintf(
         '<listview title="%s">'.LF,
         papaya_strings::escapeHTMLChars($this->_gt('Surfer'))
