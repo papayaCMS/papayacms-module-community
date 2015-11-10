@@ -14,7 +14,7 @@
 *
 * @package Papaya-Modules
 * @subpackage _Base-Community
-* @version $Id: base_surfers_edit.php 39962 2015-01-29 13:27:43Z kersken $
+* @version $Id: base_surfers_edit.php 40016 2015-11-09 11:17:27Z afflerbach $
 */
 
 /**
@@ -1550,12 +1550,46 @@ class surfer_admin_edit extends surfer_admin {
     $user = $this->papaya()->administrationUser;
     $adminGroups = array(0, $user->user['group_id']);
     if (!empty($user->groups)) {
-      $adminGroups = array_merge($adminGroups, array_keys($user->groups));
+      foreach (array_keys($user->groups) as $group) {
+        if (!in_array($group, $adminGroups)) {
+          $adminGroups[] = $group;
+        }
+      }
     }
     if (in_array(-1, $adminGroups)) {
       $adminGroups = NULL;
     }
     return $adminGroups;
+  }
+
+  /**
+  * Helper method to set multiple values only for the current range
+  *
+  * @param string $field
+  * @param array $values
+  * @param string $oldValue
+  * @return array
+  */
+  function setValueForRange($field, $values, $oldValue) {
+    $result = $values;
+    $range = $this->actions()->call(
+      'community',
+      'onGetDynamicEditFields',
+      $field,
+      TRUE
+    );
+    if (!empty($range)) {
+      $result = unserialize($oldValue);
+      foreach (array_keys($range) as $value) {
+        if (in_array($value, $values) && !in_array($value, $result)) {
+          $result[] = $value;
+        } elseif (!in_array($value, $values) && in_array($value, $result)) {
+          $key = array_search($value, $result);
+          unset($result[$key]);
+        }
+      }
+    }
+    return $result;
   }
 
   /**
@@ -1588,6 +1622,25 @@ class surfer_admin_edit extends surfer_admin {
     if (sizeof($fields) > 0) {
       // Check data for each field
       foreach ($fields as $fieldName => $fieldId) {
+        $prohibited = $this->actions()->call(
+          'community',
+          'onSaveDynamicDataProhibited',
+          array($surferId, $fieldName)
+        );
+        $cannotSave = FALSE;
+        foreach ($prohibited as $isProhibited) {
+          if ($isProhibited === TRUE) {
+            $cannotSave = TRUE;
+            break;
+          }
+        }
+        if ($cannotSave) {
+          $this->addMsg(
+            MSG_ERROR,
+            sprintf($this->_gt('You do not have permission to change the field "%s".'), $fieldName)
+          );
+          continue;
+        }
         if (isset($this->params[$fieldName])) {
           $value = $this->params[$fieldName];
           // Prepare data for contact data table
@@ -1609,6 +1662,10 @@ class surfer_admin_edit extends surfer_admin {
           if ($irow = $ires->fetchRow(DB_FETCHMODE_ASSOC)) {
             $dataId = $irow['surfercontactdata_id'];
             $oldVal = $irow['surfercontactdata_value'];
+            if (is_array($value)) {
+              $value = serialize($this->setValueForRange($fieldName, $value, $oldVal));
+              $data['surfercontactdata_value'] = $value;
+            }
             // Did the value change at all?
             if ($value != $oldVal) {
               // Now here's a change
@@ -1617,12 +1674,21 @@ class surfer_admin_edit extends surfer_admin {
               if (empty($value)) {
                 // Then delete existing record
                 $this->databaseDeleteRecord(
-                  $this->tableContactData, 'surfercontactdata_id', $dataId
+                  $this->tableContactData,
+                  array(
+                    'surfercontactdata_id' => $dataId,
+                    'surfercontactdata_surferid' => $surferId
+                  )
                 );
               } else {
                 // otherwise update existing field
                 $this->databaseUpdateRecord(
-                  $this->tableContactData, $data, 'surfercontactdata_id', $dataId
+                  $this->tableContactData,
+                  $data,
+                  array(
+                    'surfercontactdata_id' => $dataId,
+                    'surfercontactdata_surferid' => $surferId
+                  )
                 );
               }
             }
@@ -1642,11 +1708,50 @@ class surfer_admin_edit extends surfer_admin {
         } else {
           // If the field is not within the params, delete its value
           // (especially suitable for checkgroups in which nothing is selected)
-          $conditions = array(
-            'surfercontactdata_surferid' => $surferId,
-            'surfercontactdata_property' => $fieldId
+          // Special treatment for pre-filtered check groups required
+          $changes = TRUE;
+          $legalValues = $this->actions()->call(
+            'community',
+            'onGetDynamicEditFields',
+            $fieldName,
+            TRUE
           );
-          $this->databaseDeleteRecord($this->tableContactData, $conditions);
+          if (!empty($legalValues)) {
+            $isql = "SELECT surfercontactdata_id, surfercontactdata_value
+                     FROM %s
+                    WHERE surfercontactdata_property=%d
+                      AND surfercontactdata_surferid='%s'";
+            $ires = $this->databaseQueryFmt(
+              $isql,
+              array($this->tableContactData, $fieldId, $surferId)
+            );
+            $done = FALSE;
+            if ($irow = $ires->fetchRow(DB_FETCHMODE_ASSOC)) {
+              $dataId = $irow['surfercontactdata_id'];
+              $oldVal = $irow['surfercontactdata_value'];
+              if (!empty($oldVal)) {
+                $newValue = $this->setValueForRange($fieldName, array(), $oldVal);
+                if (!empty($newValue)) {
+                  $this->databaseUpdateRecord(
+                    $this->tableContactData,
+                    array('surfercontactdata_value' => serialize($newValue)),
+                    array(
+                      'surfercontactdata_id' => $dataId,
+                      'surfercontactdata_surferid' => $surferId
+                    )
+                  );
+                  $done = TRUE;
+                }
+              }
+            }
+          }
+          if (!$done) {
+            $conditions = array(
+              'surfercontactdata_surferid' => $surferId,
+              'surfercontactdata_property' => $fieldId
+            );
+            $this->databaseDeleteRecord($this->tableContactData, $conditions);
+          }
         }
       }
     }
@@ -1902,13 +2007,31 @@ class surfer_admin_edit extends surfer_admin {
       }
     }
 
+    $additionalCondition = '';
+
+    $additionalFilter = $this->actions()->call(
+      'community',
+      'onLoadSurfers',
+      NULL
+    );
+    if (!empty($additionalFilter)) {
+      $activeConditions = array();
+      foreach ($additionalFilter as $filter) {
+        if (!empty($filter)) {
+          $activeConditions[] = $filter;
+        }
+      }
+      if (!empty($activeConditions)) {
+        $additionalCondition = ' AND '.implode(' AND ', $activeConditions);
+      }
+    }
     $sql = "SELECT surfer_id, surfer_handle, surfer_givenname, surfer_surname,
                    surfer_valid, surfer_status, surfer_email, surfergroup_id
               FROM %s
              WHERE (surfer_handle LIKE '%s'
                 OR (surfer_surname LIKE '%s' $nameOperator surfer_givenname LIKE '%s')
                 OR surfer_email LIKE '%s'
-                   ) $groupCondition $statusCondition $onlineCondition
+                   ) $groupCondition $statusCondition $onlineCondition $additionalCondition
              ORDER BY %s";
 
     $params = array(
@@ -2940,6 +3063,10 @@ class surfer_admin_edit extends surfer_admin {
     }
     if (!isset($fieldValues)) {
       $fieldValues = '';
+    }
+    if ($fieldType == 'callback' || $fieldType == 'callbackmultiple') {
+      $this->addMsg(MSG_INFO, 'Nothing to configure for this field type.');
+      return;
     }
     if (trim($fieldValues) != '') {
       // Remove inappropriate values that might occur after field type changes
@@ -5405,6 +5532,42 @@ class surfer_admin_edit extends surfer_admin {
               );
             }
             break;
+          case 'callback':
+            $values = $this->actions()->call(
+              'community',
+              'onGetDynamicEditFields',
+              $row['surferdata_name'],
+              TRUE
+            );
+            if (!empty($values)) {
+              $fields[$row['surferdata_name']] = array(
+                $fieldTitle,
+                $row['surferdata_check'],
+                $row['surferdata_mandatory'],
+                'combo',
+                $values,
+                ''
+              );
+            }
+            break;
+          case 'callbackmultiple':
+            $values = $this->actions()->call(
+              'community',
+              'onGetDynamicEditFields',
+              $row['surferdata_name'],
+              TRUE
+            );
+            if (!empty($values)) {
+              $fields[$row['surferdata_name']] = array(
+                $fieldTitle,
+                $row['surferdata_check'],
+                $row['surferdata_mandatory'],
+                'checkgroup',
+                $values,
+                ''
+              );
+            }
+            break;
           }
           // Get data for current field, if available
           $isql = "SELECT sc.surfercontactdata_value
@@ -5420,7 +5583,8 @@ class surfer_admin_edit extends surfer_admin {
           );
           $ires = $this->databaseQueryFmt($isql, $idbParams);
           if ($irow = $ires->fetchRow(DB_FETCHMODE_ASSOC)) {
-            if ($row['surferdata_type'] == 'checkgroup') {
+            if ($row['surferdata_type'] == 'checkgroup' ||
+                $row['surferdata_type'] == 'callbackmultiple') {
               $data[$row['surferdata_name']] =
                 unserialize($irow['surfercontactdata_value']);
             } else {
@@ -6488,7 +6652,7 @@ class surfer_admin_edit extends surfer_admin {
     );
 
     for ($i = 0; $i < count($steps); $i++) {
-      if ($steps[$i]== $this->params['listlength']) {
+      if ($steps[$i] == $this->params['listlength']) {
         $str = 'selected="selected"';
       } else {
         $str = '';
@@ -8267,7 +8431,16 @@ class surfer_admin_edit extends surfer_admin {
       papaya_strings::escapeHTMLChars($this->paramName),
       papaya_strings::escapeHTMLChars($name)
     );
-    $values = array('input', 'textarea', 'combo', 'radio', 'checkgroup', 'function');
+    $values = array(
+      'input',
+      'textarea',
+      'combo',
+      'radio',
+      'checkgroup',
+      'function',
+      'callback',
+      'callbackmultiple'
+    );
     foreach ($values as $value) {
       $selected = ($data == $value) ? ' selected="selected"' : '';
       $result .= sprintf(
