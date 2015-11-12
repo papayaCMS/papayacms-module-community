@@ -6820,7 +6820,10 @@ class surfer_admin_edit extends surfer_admin {
     if (isset($this->surfers) && is_array($this->surfers)) {
       $images = $this->papaya()->images;
       $shortSurf = $this->surfers;
-      $listLen = $this->params['listlength'];
+      $listLen = 10;
+      if (!isset($this->params['listlength'])) {
+        $listLen = $this->params['listlength'];
+      }
       $result .= sprintf(
         '<listview title="%s">'.LF,
         papaya_strings::escapeHTMLChars($this->_gt('Surfer'))
