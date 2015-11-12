@@ -6821,7 +6821,7 @@ class surfer_admin_edit extends surfer_admin {
       $images = $this->papaya()->images;
       $shortSurf = $this->surfers;
       $listLen = 10;
-      if (!isset($this->params['listlength'])) {
+      if (isset($this->params['listlength']) && $this->params['listlength'] > 0) {
         $listLen = $this->params['listlength'];
       }
       $result .= sprintf(
