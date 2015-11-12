@@ -14,7 +14,7 @@
 *
 * @package Papaya-Modules
 * @subpackage _Base-Community
-* @version $Id: base_surfers.php 39962 2015-01-29 13:27:43Z kersken $
+* @version $Id: base_surfers.php 39981 2015-09-17 09:36:11Z kersken $
 */
 
 /**
@@ -322,11 +322,13 @@ class surfer_admin extends base_db {
   * @var boolean $delFlag
   */
   var $delFlag = FALSE;
+
   /**
    * Status list
    * @var array $status
    */
   var $status = array();
+
   /**
    * Status images list
    * @var array $statusImages
@@ -351,7 +353,17 @@ class surfer_admin extends base_db {
    */
   var $surfersAbsCount = 0;
 
+  /**
+   * Password API object
+   * @var base_auth_secure
+   */
   private $_passwordApi = NULL;
+
+  /**
+   * Action dispatcher instance
+   * @var connector_actions
+   */
+  private $_actions = NULL;
 
   /**
   * Constuctor with parameter initalisation
@@ -1733,9 +1745,7 @@ class surfer_admin extends base_db {
       );
       // Call the action dispatcher method for other modules
       // who need to do surfer cleanup stuff
-      $actionsObj = $this->papaya()->plugins->get(
-        '79f18e7c40824a0f975363346716ff62', $this
-      );
+      $actionsObj = $this->actions();
       $actionsObj->call(
         'community',
         'onSetSurferValid',
@@ -1969,9 +1979,7 @@ class surfer_admin extends base_db {
     if ($update !== FALSE) {
       // Call the action dispatcher method for other modules
       // that need to act on surfer data modification
-      $actionsObj = $this->papaya()->plugins->get(
-        '79f18e7c40824a0f975363346716ff62', $this
-      );
+      $actionsObj = $this->actions();
       $actionData = array(
         'surfer_id' => $this->editSurfer['surfer_id'],
         'data_before' => $this->extractActionData($this->editSurfer),
@@ -2089,9 +2097,7 @@ class surfer_admin extends base_db {
     $surferData = $arrSurfer[$surferId];
     // Call the action dispatcher method for other modules
     // that need to act on surfer data modification
-    $actionsObj = $this->papaya()->plugins->get(
-      '79f18e7c40824a0f975363346716ff62', $this
-    );
+    $actionsObj = $this->actions();
     $actionData = array(
       'surfer_id' => $surferId,
       'data_before' => $this->extractActionData($surferDataBefore),
@@ -2138,9 +2144,7 @@ class surfer_admin extends base_db {
   function deleteSurfer($surferId) {
     // Call the action dispatcher method for other modules
     //that need to do surfer cleanup stuff
-    $actionsObj = $this->papaya()->plugins->get(
-      '79f18e7c40824a0f975363346716ff62', $this
-    );
+    $actionsObj = $this->actions();
     $actionsObj->call('community', 'onDeleteSurfer', $surferId);
     // Success/failure depends only on surfer table; any other data is optional
     $deletion = $this->databaseDeleteRecord(
@@ -2316,13 +2320,36 @@ class surfer_admin extends base_db {
     return $id;
   }
 
+  /**
+   * Get/set/initialize the password API object
+   *
+   * @param base_auth_secure $api optional, default NULL
+   * @return base_auth_secure
+   */
   public function passwordApi($api = NULL) {
     if (isset($api)) {
       $this->_passwordApi = $api;
-    } else {
+    } elseif (is_null($this->_passwordApi)) {
       $this->_passwordApi = new base_auth_secure();
     }
     return $this->_passwordApi;
+  }
+
+  /**
+   * Get/set/initialize the action dispatcher connector object
+   *
+   * @param connector_actions $actions optional, default NULL
+   * @return connector_actions
+   */
+  public function actions($actions = NULL) {
+    if (isset($actions)) {
+      $this->_actions = $actions;
+    } elseif (is_null($this->_actions)) {
+      $this->_actions = $this->papaya()->plugins->get(
+        '79f18e7c40824a0f975363346716ff62', $this
+      );
+    }
+    return $this->_actions;
   }
 
   /**
@@ -2991,7 +3018,8 @@ class surfer_admin extends base_db {
       $results = array();
       while ($row = $res->fetchRow(DB_FETCHMODE_ASSOC)) {
         if ($numericMode) {
-          if ($row['surferdata_type'] == 'checkgroup') {
+          if ($row['surferdata_type'] == 'checkgroup' ||
+              $row['surferdata_type'] == 'callbackmultiple') {
             $results[$row['surfercontactdata_surferid']] = unserialize(
               $row['surfercontactdata_value']
             );
@@ -3002,7 +3030,8 @@ class surfer_admin extends base_db {
           if (!isset($results[$row['surfercontactdata_surferid']])) {
             $results[$row['surfercontactdata_surferid']] = array();
           }
-          if ($row['surferdata_type'] == 'checkgroup') {
+          if ($row['surferdata_type'] == 'checkgroup' ||
+              $row['surferdata_type'] == 'callbackmultiple') {
             $results[$row['surfercontactdata_surferid']][$row['surferdata_name']] =
               unserialize($row['surfercontactdata_value']);
           } else {
@@ -3514,7 +3543,13 @@ class surfer_admin extends base_db {
         $title = $field['surferdata_name'];
       }
       // Get values according to field type
-      if (in_array($field['surferdata_type'], array('combo', 'radio', 'checkgroup'))) {
+      if ($field['surferdata_type'] == 'callback') {
+        $values = $this->actions()->call('community', 'onGetDynamicEditFields', $fieldName, TRUE);
+        $field['surferdata_type'] = 'combo';
+      } elseif ($field['surferdata_type'] == 'callbackmultiple') {
+        $values = $this->actions()->call('community', 'onGetDynamicEditFields', $fieldName, TRUE);
+        $field['surferdata_type'] = 'checkgroup';
+      } elseif (in_array($field['surferdata_type'], array('combo', 'radio', 'checkgroup'))) {
         $values = $this->parseFormValueXML($field['surferdata_values'], $lng);
       } else {
         $values = $field['surferdata_values'];
@@ -4232,8 +4267,25 @@ class surfer_admin extends base_db {
   * @return array $surfers Surfers result
   */
   function getFavoriteSurfers($withHandles = TRUE) {
+    $additionalCondition = '';
+    $additionalFilter = $this->actions()->call(
+      'community',
+      'onLoadFavoriteSurfers',
+      NULL
+    );
+    if (!empty($additionalFilter)) {
+      $activeConditions = array();
+      foreach ($additionalFilter as $filter) {
+        if (!empty($filter)) {
+          $activeConditions[] = $filter;
+        }
+      }
+      if (!empty($activeConditions)) {
+        $additionalCondition = ' WHERE '.implode(' AND ', $activeConditions);
+      }
+    }
     $sql = "SELECT favorite_surferid
-              FROM %s";
+              FROM %s ".str_replace('%', '%%', $additionalCondition);
     $sqlParams = array($this->tableFavorites);
     $surferIds = array();
     if ($res = $this->databaseQueryFmt($sql, $sqlParams)) {
