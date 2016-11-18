@@ -321,7 +321,9 @@ class surfer_admin_edit extends surfer_admin {
         }
       }
       // Display permissions, statistics, and surfer favorites on the right
-      $layout->addRight($this->permList());
+      if ($this->module->hasPerm(7)) {
+        $layout->addRight($this->permList());
+      }
       $layout->addRight($this->surferStatistics());
       $layout->addRight($this->surferFavoriteList());
     } elseif ($this->params['mode'] == 3) {
@@ -7443,27 +7445,29 @@ class surfer_admin_edit extends surfer_admin {
           FALSE
         );
       }
-      $toolbar->addSeperator();
-      $toolbar->addButton(
-        'Add permission',
-        $this->getLink(array('cmd' => 'perm_add')),
-        'actions-permission-add',
-        '',
-        FALSE
-      );
-      if (($this->editPerm['surferperm_id'] >= 0)) {
+      if ($this->module->hasPerm(7)) {
+        $toolbar->addSeperator();
         $toolbar->addButton(
-          'Delete permission',
-          $this->getLink(
-            array(
-              'cmd' => 'perm_del',
-              'perm_id' => $this->editPerm['surferperm_id']
-            )
-          ),
-          'actions-permission-delete',
+          'Add permission',
+          $this->getLink(array('cmd' => 'perm_add')),
+          'actions-permission-add',
           '',
           FALSE
         );
+        if (($this->editPerm['surferperm_id'] >= 0)) {
+          $toolbar->addButton(
+            'Delete permission',
+            $this->getLink(
+              array(
+                'cmd' => 'perm_del',
+                'perm_id' => $this->editPerm['surferperm_id']
+              )
+            ),
+            'actions-permission-delete',
+            '',
+            FALSE
+          );
+        }
       }
     } elseif ($this->params['mode'] == 3) {
       // General settings
