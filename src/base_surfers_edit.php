@@ -120,32 +120,34 @@ class surfer_admin_edit extends surfer_admin {
   function get($layout) {
     // Check mode to determine which dialogs are needed
     if ($this->params['mode'] == 1) {
-      // Mode 1: Groups
-      // Display the group list on the left
-      $layout->addLeft($this->getGroupList());
-      // Check cmd
-      if (@$this->params['cmd'] == 'del_group') {
-        // Form to confirm group deletion
-        $this->getDelGroupForm($layout);
-      } elseif (@$this->params['cmd'] == 'perm_del') {
-        // Form to confirm permission deletion
-        $this->getDelPermForm($layout);
-      }
-      // Check whether there's a current group
-      if (isset($this->surferGroup) && is_array($this->surferGroup)) {
-        // Display form to edit current group
-        $this->layout->add($this->getGroupEdit());
-      } elseif (isset($this->params['perm_id']) && ($this->params['perm_id'] > 0)) {
-        // Otherwise check whether there's a current permission
-        if (!(isset($this->editPerm) && is_array($this->editPerm))) {
-          // Store current permission in editPerm attribute
-          $this->editPerm = $this->permissionsList[$this->params['perm_id']];
+      if ($this->module->hasPerm(7, TRUE)) {
+        // Mode 1: Groups
+        // Display the group list on the left
+        $layout->addLeft($this->getGroupList());
+        // Check cmd
+        if (@$this->params['cmd'] == 'del_group') {
+          // Form to confirm group deletion
+          $this->getDelGroupForm($layout);
+        } elseif (@$this->params['cmd'] == 'perm_del') {
+          // Form to confirm permission deletion
+          $this->getDelPermForm($layout);
         }
-        // Display form to edit current permission
-        $layout->add($this->editPerm($this->editPerm));
+        // Check whether there's a current group
+        if (isset($this->surferGroup) && is_array($this->surferGroup)) {
+          // Display form to edit current group
+          $this->layout->add($this->getGroupEdit());
+        } elseif (isset($this->params['perm_id']) && ($this->params['perm_id'] > 0)) {
+          // Otherwise check whether there's a current permission
+          if (!(isset($this->editPerm) && is_array($this->editPerm))) {
+            // Store current permission in editPerm attribute
+            $this->editPerm = $this->permissionsList[$this->params['perm_id']];
+          }
+          // Display form to edit current permission
+          $layout->add($this->editPerm($this->editPerm));
+        }
+        // Display the permission list on the right
+        $layout->addRight($this->permList());
       }
-      // Display the permission list on the right
-      $layout->addRight($this->permList());
     } elseif ($this->params['mode'] == 2) {
       // Mode 2: Profile data field definitions
       // Decide according to cmd parameter
@@ -7132,14 +7134,16 @@ class surfer_admin_edit extends surfer_admin {
     $toolbar->images = $this->papaya()->images;
 
     if ($this->params['mode'] == 1) {
-      // Change groups
-      $toolbar->addButton(
-        'Groups',
-        $this->getLink(array('mode' => 1)),
-        'items-user-group',
-        '',
-        TRUE
-      );
+      if ($this->module->hasPerm(7)) {
+        // Change groups
+        $toolbar->addButton(
+          'Groups',
+          $this->getLink(array('mode' => 1)),
+          'items-user-group',
+          '',
+          TRUE
+        );
+      }
       $toolbar->addButton(
         'Surfer',
         $this->getLink(array('mode' => 0)),
@@ -7165,27 +7169,29 @@ class surfer_admin_edit extends surfer_admin {
           FALSE
         );
       }
-      $toolbar->addSeperator();
-      $toolbar->addButton(
-        'Add group',
-        $this->getLink(array('cmd' => 'add_group')),
-        'actions-user-group-add',
-        '',
-        FALSE
-      );
-      if (isset($this->surferGroup) && is_array($this->surferGroup)) {
+      if ($this->module->hasPerm(7)) {
+        $toolbar->addSeperator();
         $toolbar->addButton(
-          'Delete group',
-          $this->getLink(
-            array(
-              'cmd' => 'del_group',
-              'group_id' => (int)$this->surferGroup['surfergroup_id']
-            )
-          ),
-          'actions-user-group-delete',
+          'Add group',
+          $this->getLink(array('cmd' => 'add_group')),
+          'actions-user-group-add',
           '',
           FALSE
         );
+        if (isset($this->surferGroup) && is_array($this->surferGroup)) {
+          $toolbar->addButton(
+            'Delete group',
+            $this->getLink(
+              array(
+                'cmd' => 'del_group',
+                'group_id' => (int)$this->surferGroup['surfergroup_id']
+              )
+            ),
+            'actions-user-group-delete',
+            '',
+            FALSE
+          );
+        }
       }
       $toolbar->addSeperator();
       $toolbar->addButton(
@@ -7212,14 +7218,16 @@ class surfer_admin_edit extends surfer_admin {
       }
 
     } elseif ($this->params['mode'] == 2) {
-      // Change profile data fields
-      $toolbar->addButton(
-        'Groups',
-        $this->getLink(array('mode' => 1)),
-        'items-user-group',
-        '',
-        FALSE
-      );
+      if ($this->module->hasPerm(7)) {
+        // Change profile data fields
+        $toolbar->addButton(
+          'Groups',
+          $this->getLink(array('mode' => 1)),
+          'items-user-group',
+          '',
+          FALSE
+        );
+      }
       $toolbar->addButton(
         'Surfer',
         $this->getLink(array('mode' => 0)),
@@ -7317,13 +7325,15 @@ class surfer_admin_edit extends surfer_admin {
       );
     } elseif ($this->params['mode'] == 0) {
       // Change surfer data
-      $toolbar->addButton(
-        'Groups',
-        $this->getLink(array('mode' => 1)),
-        'items-user-group',
-        '',
-        FALSE
-      );
+      if ($this->module->hasPerm(7)) {
+        $toolbar->addButton(
+          'Groups',
+          $this->getLink(array('mode' => 1)),
+          'items-user-group',
+          '',
+          FALSE
+        );
+      }
       $toolbar->addButton(
         'Surfer',
         $this->getLink(array('mode' => 0)),
@@ -7457,13 +7467,15 @@ class surfer_admin_edit extends surfer_admin {
       }
     } elseif ($this->params['mode'] == 3) {
       // General settings
-      $toolbar->addButton(
-        'Groups',
-        $this->getLink(array('mode' => 1)),
-        'items-user-group',
-        '',
-        FALSE
-      );
+      if ($this->module->hasPerm(7)) {
+        $toolbar->addButton(
+          'Groups',
+          $this->getLink(array('mode' => 1)),
+          'items-user-group',
+          '',
+          FALSE
+        );
+      }
       $toolbar->addButton(
         'Surfer',
         $this->getLink(array('mode' => 0)),

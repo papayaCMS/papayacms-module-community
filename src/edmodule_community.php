@@ -41,7 +41,8 @@ class edmodule_community extends base_module {
     3 => 'Export',
     4 => 'Edit profile data',
     5 => 'General settings',
-    6 => 'Advanced surfer administration'
+    6 => 'Advanced surfer administration',
+    7 => 'Group administration'
   );
 
   /**
