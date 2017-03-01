@@ -454,7 +454,13 @@ class surfer_admin_edit extends surfer_admin {
           $this->editSurfer = $this->loadSurfer($this->params['id']);
           if (isset($this->editSurfer) && is_array($this->editSurfer)) {
             $this->initializeSurferForm($this->editSurfer);
-            if ($this->surferDialog->checkDialogInput()) {
+
+            $ignore = isset($this->params['ignore_illegal']) && $this->params['ignore_illegal'];
+            if (
+                ($ignore && $this->checkInputs(TRUE))
+                ||
+                ($this->surferDialog->checkDialogInput() && $this->checkInputs())
+            ) {
               if ($this->saveSurferProfile()) {
                 $this->addMsg(MSG_INFO, 'Surfer profile data changed.');
               }
