@@ -3333,7 +3333,18 @@ class surfer_admin extends base_db {
         $checkFunction = $fieldChecks[$fieldName]['check'];
         // Check whether this is an official check function
         if (checkit::has($checkFunction)) {
-          $fResult = checkit::validate($val, $checkFunction);
+          
+          if (is_array($val) && count($val) > 0) {
+            $fResult = TRUE;
+            foreach ($val as $oneValue) {
+              if (checkit::validate($oneValue, $checkFunction) == FALSE) {
+                $fResult = FALSE;
+              }
+            }
+          } else {
+            $fResult = checkit::validate($val, $checkFunction);
+          }
+          
           // If field is invalid, set value for this field to FALSE
           // and add error message
           if ($fResult) {
