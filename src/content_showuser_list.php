@@ -12,7 +12,7 @@
 * * sys_email is used to send emails instead of the php internal email() function
 * * editFields conform to the coding standard -> not compatible with content_userdata
 *
-* @copyright 2002-2009 by papaya Software GmbH - All rights reserved.
+* @copyright 2002-2017 by dimensional GmbH - All rights reserved.
 * @link http://www.papaya-cms.com/
 * @license http://www.gnu.org/licenses/old-licenses/gpl-2.0.html GNU General Public License, version 2
 *

@@ -6,6 +6,7 @@ return array(
   'actionbox_login_handle' => '/actbox_login_handle.php',
   'actionbox_richtext_surfer' => '/actbox_richtext_surfer.php',
   'actionbox_surfers_online' => '/actbox_surfers_online.php',
+  'actionbox_topic_tag_surfers' => '/actbox_topic_tag_surfers.php',
   'alias_surferhandle' => '/alias_surferhandle.php',
   'contact_manager' => '/base_contacts.php',
   'surfer_admin' => '/base_surfers.php',

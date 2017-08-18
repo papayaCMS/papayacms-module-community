@@ -2,7 +2,7 @@
 /**
 * Page module - Community surfer avatar image upload module.
 *
-* @copyright 2002-2009 by papaya Software GmbH - All rights reserved.
+* @copyright 2002-2017 by dimensional GmbH - All rights reserved.
 * @link http://www.papaya-cms.com/
 * @license http://www.gnu.org/licenses/old-licenses/gpl-2.0.html GNU General Public License, version 2
 *

@@ -2,7 +2,7 @@
 /**
 * Page module - Show user data
 *
-* @copyright 2002-2009 by papaya Software GmbH - All rights reserved.
+* @copyright 2002-2017 by dimensional GmbH - All rights reserved.
 * @link http://www.papaya-cms.com/
 * @license http://www.gnu.org/licenses/old-licenses/gpl-2.0.html GNU General Public License, version 2
 *
@@ -173,8 +173,8 @@ class content_showuser extends base_content {
     } else {
       $result .= '<userdata>';
       $result .= sprintf(
-        '<message>%s</message>'.LF,
-        papaya_strings::escapeHTMLChars($this->data['Unknown_User'])
+        '<message>%s, %s</message>'.LF,
+        papaya_strings::escapeHTMLChars($this->data['Unknown_User']), $this->paramName
       );
     }
     $result .= '</userdata>';

@@ -2,7 +2,7 @@
 /**
 * Community user management, base class
 *
-* @copyright 2002-2009 by papaya Software GmbH - All rights reserved.
+* @copyright 2002-2017 by dimensional GmbH - All rights reserved.
 * @link http://www.papaya-cms.com/
 * @license http://www.gnu.org/licenses/old-licenses/gpl-2.0.html GNU General Public License, version 2
 *
@@ -3097,6 +3097,35 @@ class surfer_admin extends base_db {
       return $results;
     }
     return NULL;
+  }
+
+  /**
+  * Get localized titles for dynamic data if available
+  *
+  * @param integer $languageId optional, default NULL
+  * @return array
+  */
+  public function getDynamicDataTitles($languageId = NULL) {
+    if ($languageId === NULL) {
+      $languageId = $this->papaya()->administrationLanguage->id;
+    }
+    $sql = "SELECT d.surferdata_id, d.surferdata_name, dt.surferdatatitle_title
+              FROM %s d
+             INNER JOIN %s dt
+                ON d.surferdata_id = dt.surferdatatitle_field
+             WHERE dt.surferdatatitle_lang = %d";
+    $parameters = [
+      $this->tableData,
+      $this->tableDataTitles,
+      $languageId
+    ];
+    $result = [];
+    if ($res = $this->databaseQueryFmt($sql, $parameters)) {
+      while ($row = $res->fetchRow(DB_FETCHMODE_ASSOC)) {
+        $result[$row['surferdata_name']] = $row['surferdatatitle_title'];
+      }
+    }
+    return $result;
   }
 
   /**
