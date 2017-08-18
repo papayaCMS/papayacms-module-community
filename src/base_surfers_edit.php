@@ -386,1144 +386,1171 @@ class surfer_admin_edit extends surfer_admin {
       }
     }
     // Now go for the cmd parameter
+    $cmd = '';
     if (isset($this->params['cmd'])) {
-      switch (trim($this->params['cmd'])) {
-      case 'del_fav' :
-        if (isset($this->params['id']) && $this->existID($this->params['id'], TRUE)) {
-          $this->removeSurferFromFavorites($this->params['id']);
-          $this->addMsg(
-            MSG_INFO,
-            $this->_gtf(
-              'Removed surfer "%s" from favorites.',
-              $this->getAnyHandleById($this->params['id'])
-            )
-          );
-        } else {
-          $this->addMsg(MSG_WARNING, $this->_gt('Could not remove surfer from favorites.'));
-        }
-        break;
-      case 'del_fav_list' :
-        if (isset($this->params['confirm_delete']) && $this->params['confirm_delete'] == 1) {
-          $this->removeSurferFromFavorites();
-          $this->addMsg(MSG_INFO, $this->_gt('Removed all surfers from favorites.'));
-        }
-        break;
-      case 'export' :
-        // Export surfer data as CSV
-        if ($this->module->hasPerm(3, TRUE)) {
-          $this->exportSurfers();
-        }
-        break;
-      case 'edit' :
-        // Edit surfer's basic data
-        if (isset($this->params['id']) && ($this->params['id'] != '')) {
-          $this->editSurfer = $this->loadSurfer($this->params['id']);
-          $this->editSurfer['surfer_status'] = $this->getOnlineStatus(
-            $this->editSurfer['surfer_id']
-          );
-          if (isset($this->editSurfer) && is_array($this->editSurfer)) {
-            $this->initializeSurferForm($this->editSurfer);
-            if ($this->surferDialog->modified()) {
-              $permit = TRUE;
-              if ($this->editSurfer['auth_user_id'] != '' &&
-                  !($this->papaya()->administrationUser->hasPerm(4))) {
-                $permit = FALSE;
-                $this->addMsg(
-                  MSG_ERROR,
-                  $this->_gt('Insufficient permissions to edit surfers linked to backend users.')
-                );
-              }
-              if ($permit) {
-                $ignore = isset($this->params['ignore_illegal']) && $this->params['ignore_illegal'];
-                if (($ignore && $this->checkInputs(TRUE)) ||
-                    ($this->surferDialog->checkDialogInput() && $this->checkInputs())) {
-                  if ($this->saveSurfer(NULL, $ignore)) {
-                    $this->addMsg(MSG_INFO, $this->_gt('Surfer modified.'));
-                  } else {
-                    $this->addMsg(MSG_ERROR, $this->_gt('Could not save surfer due to errors.'));
-                  }
+      $cmd = trim($this->params['cmd']);
+    }
+    switch ($cmd) {
+    case 'del_fav' :
+      if (isset($this->params['id']) && $this->existID($this->params['id'], TRUE)) {
+        $this->removeSurferFromFavorites($this->params['id']);
+        $this->addMsg(
+          MSG_INFO,
+          $this->_gtf(
+            'Removed surfer "%s" from favorites.',
+            $this->getAnyHandleById($this->params['id'])
+          )
+        );
+      } else {
+        $this->addMsg(MSG_WARNING, $this->_gt('Could not remove surfer from favorites.'));
+      }
+      break;
+    case 'del_fav_list' :
+      if (isset($this->params['confirm_delete']) && $this->params['confirm_delete'] == 1) {
+        $this->removeSurferFromFavorites();
+        $this->addMsg(MSG_INFO, $this->_gt('Removed all surfers from favorites.'));
+      }
+      break;
+    case 'export' :
+      // Export surfer data as CSV
+      if ($this->module->hasPerm(3, TRUE)) {
+        $this->exportSurfers();
+      }
+      break;
+    case 'edit' :
+      // Edit surfer's basic data
+      if (isset($this->params['id']) && ($this->params['id'] != '')) {
+        $this->editSurfer = $this->loadSurfer($this->params['id']);
+        $this->editSurfer['surfer_status'] = $this->getOnlineStatus(
+          $this->editSurfer['surfer_id']
+        );
+        if (isset($this->editSurfer) && is_array($this->editSurfer)) {
+          $this->initializeSurferForm($this->editSurfer);
+          if ($this->surferDialog->modified()) {
+            $permit = TRUE;
+            if ($this->editSurfer['auth_user_id'] != '' &&
+                !($this->papaya()->administrationUser->hasPerm(4))) {
+              $permit = FALSE;
+              $this->addMsg(
+                MSG_ERROR,
+                $this->_gt('Insufficient permissions to edit surfers linked to backend users.')
+              );
+            }
+            if ($permit) {
+              $ignore = isset($this->params['ignore_illegal']) && $this->params['ignore_illegal'];
+              if (($ignore && $this->checkInputs(TRUE)) ||
+                  ($this->surferDialog->checkDialogInput() && $this->checkInputs())) {
+                if ($this->saveSurfer(NULL, $ignore)) {
+                  $this->addMsg(MSG_INFO, $this->_gt('Surfer modified.'));
+                } else {
+                  $this->addMsg(MSG_ERROR, $this->_gt('Could not save surfer due to errors.'));
                 }
               }
             }
           }
         }
-        break;
-      case 'edit_profile' :
-        // Edit surfer's profile data
-        if (isset($this->params['id']) && ($this->params['id'] != '')) {
-          $this->editSurfer = $this->loadSurfer($this->params['id']);
-          if (isset($this->editSurfer) && is_array($this->editSurfer)) {
-            $this->initializeSurferForm($this->editSurfer);
+      }
+      break;
+    case 'edit_profile' :
+      // Edit surfer's profile data
+      if (isset($this->params['id']) && ($this->params['id'] != '')) {
+        $this->editSurfer = $this->loadSurfer($this->params['id']);
+        if (isset($this->editSurfer) && is_array($this->editSurfer)) {
+          $this->initializeSurferForm($this->editSurfer);
 
-            $ignore = isset($this->params['ignore_illegal']) && $this->params['ignore_illegal'];
-            if (
-                ($ignore && $this->checkInputs(TRUE))
-                ||
-                ($this->surferDialog->checkDialogInput() && $this->checkInputs())
-            ) {
-              if ($this->saveSurferProfile()) {
-                $this->addMsg(MSG_INFO, 'Surfer profile data changed.');
+          $ignore = isset($this->params['ignore_illegal']) && $this->params['ignore_illegal'];
+          if (
+              ($ignore && $this->checkInputs(TRUE))
+              ||
+              ($this->surferDialog->checkDialogInput() && $this->checkInputs())
+          ) {
+            if ($this->saveSurferProfile()) {
+              $this->addMsg(MSG_INFO, 'Surfer profile data changed.');
+            }
+          }
+        }
+      }
+      break;
+    case 'add_apikey' :
+      if (isset($this->params['id'])) {
+        if (!empty($this->editSurfer) || $this->loadSurfer($this->params['id'])) {
+          $this->addApiKey();
+        }
+      }
+      break;
+    case 'do_export_fields' :
+      // Export profile data fields
+      if ($this->module->hasPerm(4, TRUE)) {
+        $this->exportProfileFields();
+      }
+      break;
+    case 'do_import_fields' :
+      // Import profile data fields
+      if ($this->module->hasPerm(4, TRUE)) {
+        $this->importProfileFields();
+      }
+      break;
+    case 'add' :
+      // Add new surfer
+      $this->initializeSurferForm(NULL, 'add');
+      $ignore = isset($this->params['ignore_illegal']) && $this->params['ignore_illegal'];
+      if (($ignore && $this->checkInputs(TRUE)) ||
+          ($this->surferDialog->checkDialogInput() && $this->checkInputs())) {
+        if (FALSE !== ($newId = $this->insertSurfer())) {
+          $this->params['id'] = $newId;
+          $this->editSurfer = $this->loadSurfer($newId);
+          $this->initializeSurferForm($this->editSurfer, 'edit', TRUE);
+          $this->addMsg(MSG_INFO, $this->_gt("New surfer added."));
+        } else {
+          $this->addMsg(MSG_ERROR, $this->_gt("Error inserting surfer."));
+        }
+      } else {
+        $this->editSurfer = $this->getNewSurferData();
+      }
+      break;
+    case 'delete' :
+      if ($this->module->hasPerm(6)) {
+        // Delete surfer
+        if (isset($this->params['id']) && trim($this->params['id']) != '' &&
+            isset($this->params['confirm_delete'])) {
+          $this->editSurfer = $this->loadSurfer($this->params['id']);
+          if (isset($this->editSurfer) && !$this->editSurfer['user_id']) {
+            if ($this->deleteSurfer($this->params['id'])) {
+              $this->addMsg(MSG_INFO, $this->_gt('Surfer deleted.'));
+              unset($this->editSurfer);
+              unset($this->params['id']);
+            } else {
+              $this->addMsg(MSG_ERROR, $this->_gt('Database error!'));
+            }
+          }
+        }
+      }
+      break;
+    case 'add_rule' :
+      // Add a black list rule
+      if (isset($this->params['rule']) && trim($this->params['rule']) != '') {
+        if ($this->addHandleRuleToBlacklist($this->params['rule'])) {
+          $this->addMsg(
+            MSG_INFO,
+            sprintf($this->_gt('Added rule "%s" to black list.'), $this->params['rule'])
+          );
+        } else {
+          $this->addMsg(
+            MSG_ERROR,
+            sprintf(
+              $this->_gt('Could not add black list rule "%s".'),
+              $this->params['rule']
+            )
+          );
+        }
+      } else {
+        $this->addMsg(MSG_ERROR, $this->_gt('No black list rule provided.'));
+      }
+      break;
+    case 'del_rule' :
+      // Delete a black list rule
+      if (isset($this->params['rule_id']) && trim($this->params['rule_id']) != '') {
+        $success = $this->databaseDeleteRecord(
+          $this->tableBlacklist,
+          'blacklist_id',
+          $this->params['rule_id']
+        );
+        if ($success) {
+          $this->addMsg(MSG_INFO, $this->_gt('Black list rule deleted.'));
+        } else {
+          $this->addMsg(MSG_ERROR, $this->_gt('No such black list rule to delete.'));
+        }
+      } else {
+        $this->addMsg(MSG_ERROR, $this->_gt('No black list rule to delete.'));
+      }
+      break;
+    case 'add_email_rule' :
+      // Add a black list rule
+      if (isset($this->params['rule']) && trim($this->params['rule']) != '') {
+        if ($this->addEmailRuleToBlacklist($this->params['rule'])) {
+          $this->addMsg(
+            MSG_INFO,
+            sprintf($this->_gt('Added rule "%s" to black list.'), $this->params['rule'])
+          );
+        } else {
+          $this->addMsg(
+            MSG_ERROR,
+            sprintf(
+              $this->_gt('Could not add black list rule "%s".'),
+              $this->params['rule']
+            )
+          );
+        }
+      } else {
+        $this->addMsg(MSG_ERROR, $this->_gt('No black list rule provided.'));
+      }
+      break;
+    case 'del_email_rule' :
+      // Delete a black list rule
+      if (isset($this->params['rule_id']) && trim($this->params['rule_id']) != '') {
+        $success = $this->databaseDeleteRecord(
+          $this->tableBlacklist,
+          'blacklist_id',
+          $this->params['rule_id']
+        );
+        if ($success) {
+          $this->addMsg(MSG_INFO, $this->_gt('Black list rule deleted.'));
+        } else {
+          $this->addMsg(MSG_ERROR, $this->_gt('No such black list rule to delete.'));
+        }
+      } else {
+        $this->addMsg(MSG_ERROR, $this->_gt('No black list rule to delete.'));
+      }
+      break;
+    case 'delay_on' :
+      // Set mode for an email blacklist rule to delay
+      if (isset($this->params['rule_id']) && trim($this->params['rule_id']) != '') {
+        $success = $this->databaseUpdateRecord(
+          $this->tableBlacklist,
+          array('blacklist_delay' => 1),
+          'blacklist_id',
+          $this->params['rule_id']
+        );
+        if (FALSE !== $success) {
+          $this->addMsg(MSG_INFO, $this->_gt('Blacklist rule mode set to delay.'));
+        } else {
+          $this->addMsg(MSG_ERROR, $this->_gt('Could not set blacklist rule mode to delay.'));
+        }
+      } else {
+        $this->addMsg(MSG_ERROR, $this->_gt('No black list rule to alter the mode for.'));
+      }
+      break;
+    case 'delay_off' :
+      // Set mode for an email blacklist rule to reject
+      if (isset($this->params['rule_id']) && trim($this->params['rule_id']) != '') {
+        $success = $this->databaseUpdateRecord(
+          $this->tableBlacklist,
+          array('blacklist_delay' => 0),
+          'blacklist_id',
+          $this->params['rule_id']
+        );
+        if (FALSE !== $success) {
+          $this->addMsg(MSG_INFO, $this->_gt('Blacklist rule mode set to reject.'));
+        } else {
+          $this->addMsg(MSG_ERROR, $this->_gt('Could not set blacklist rule mode to reject.'));
+        }
+      } else {
+        $this->addMsg(MSG_ERROR, $this->_gt('No black list rule to alter the mode for.'));
+      }
+      break;
+    case 'add_password_rule' :
+      // Add a black list rule
+      if (isset($this->params['rule']) && trim($this->params['rule']) != '') {
+        if ($this->addPasswordRuleToBlacklist($this->params['rule'])) {
+          $this->addMsg(
+            MSG_INFO,
+            sprintf($this->_gt('Added rule "%s" to black list.'), $this->params['rule'])
+          );
+        } else {
+          $this->addMsg(
+            MSG_ERROR,
+            sprintf(
+              $this->_gt('Could not add black list rule "%s".'),
+              $this->params['rule']
+            )
+          );
+        }
+      } else {
+        $this->addMsg(MSG_ERROR, $this->_gt('No black list rule provided.'));
+      }
+      break;
+    case 'del_password_rule' :
+      // Delete a black list rule
+      if (isset($this->params['rule_id']) && trim($this->params['rule_id']) != '') {
+        $success = $this->databaseDeleteRecord(
+          $this->tableBlacklist,
+          'blacklist_id',
+          $this->params['rule_id']
+        );
+        if ($success) {
+          $this->addMsg(MSG_INFO, $this->_gt('Black list rule deleted.'));
+        } else {
+          $this->addMsg(MSG_ERROR, $this->_gt('No such black list rule to delete.'));
+        }
+      } else {
+        $this->addMsg(MSG_ERROR, $this->_gt('No black list rule to delete.'));
+      }
+      break;
+    case 'del_request' :
+      // Delete change request(s)
+      if (isset($this->params['request_id']) && $this->params['request_id'] > 0 &&
+          isset($this->params['confirm_delete'])) {
+        // While we're at it, delete all expired requests and
+        // any request of the same type as the clicked one
+        $sql = "SELECT surferchangerequest_type
+                  FROM %s
+                 WHERE surferchangerequest_id = %d";
+        $res = $this->databaseQueryFmt(
+          $sql,
+          array(
+            $this->tableChangeRequests,
+            $this->params['request_id']
+          )
+        );
+        if ($row = $res->fetchRow(DB_FETCHMODE_ASSOC)) {
+          $type = $row['surferchangerequest_type'];
+          $this->databaseDeleteRecord(
+            $this->tableChangeRequests,
+            array(
+              'surferchangerequest_surferid' => $this->params['id'],
+              'surferchangerequest_type' => $type
+            )
+          );
+        }
+        $sql = "DELETE FROM %s WHERE surferchangerequest_expiry < %d";
+        $this->databaseQueryFmt($sql, array($this->tableChangeRequests, time()));
+        $this->addMsg(MSG_INFO, $this->_gt('Requests deleted.'));
+      }
+      break;
+    case 'move_field' :
+      // Move a profile data field in sort order
+      if ($this->module->hasPerm(4, TRUE)) {
+        if (isset($this->params['data_id']) &&
+          $this->params['data_id'] > 0 &&
+        isset($this->params['class_id']) &&
+        $this->params['class_id'] > 0 &&
+        isset($this->params['dir']) &&
+        preg_match('/^(up|down)$/', $this->params['dir'])) {
+          $dataId = $this->params['data_id'];
+          $classId = $this->params['class_id'];
+          $dir = $this->params['dir'];
+          // Set order in current class by name if there is no order yet
+          $this->orderDataFields($classId);
+          // Get the order number of the current field
+          $order = -1;
+          $sql = 'SELECT surferdata_order
+                    FROM %s
+                   WHERE surferdata_id=%d';
+          $res = $this->databaseQueryFmt(
+            $sql, array($this->tableData, $dataId)
+          );
+          if ($num = $res->fetchField()) {
+            $order = $num;
+          }
+          if ($order == -1) {
+            $this->addMsg(MSG_ERROR, 'Database error!');
+          } else {
+            // Check direction
+            if ($dir == 'up') {
+              // Moving 'up' (lower number)
+              // Get minimum order number
+              $sql = 'SELECT MIN(surferdata_order)
+                        FROM %s
+                       WHERE surferdata_class=%d
+                       GROUP BY surferdata_class';
+              $res = $this->databaseQueryFmt(
+                $sql,
+                array($this->tableData, $classId)
+              );
+              $minOrder = $res->fetchField();
+              // Act only if current field's order number is greater than minimum
+              if ($order > $minOrder) {
+                // Swap current field's order number with its predecessor's order number
+                $data = array('surferdata_order' => $order);
+                $this->databaseUpdateRecord(
+                  $this->tableData,
+                  $data,
+                  'surferdata_order',
+                  $order - 1);
+                $data = array('surferdata_order' => $order - 1);
+                $this->databaseUpdateRecord(
+                  $this->tableData,
+                  $data,
+                  'surferdata_id',
+                  $dataId
+                );
+              }
+            } else {
+              // Moving 'down' (higher number)
+              // Get maximum order number
+              $sql = 'SELECT MAX(surferdata_order)
+                        FROM %s
+                       WHERE surferdata_class=%d
+                       GROUP BY surferdata_class';
+              $res = $this->databaseQueryFmt(
+                $sql,
+                array($this->tableData, $classId)
+              );
+              $maxOrder = $res->fetchField();
+              // Act only if current field's order number is less than maximum
+              if ($order < $maxOrder) {
+                // Swap current field's order number with its successor's order number
+                $data = array('surferdata_order' => $order);
+                $this->databaseUpdateRecord(
+                  $this->tableData, $data, 'surferdata_order', $order + 1
+                );
+                $data = array('surferdata_order' => $order + 1);
+                $this->databaseUpdateRecord(
+                  $this->tableData, $data, 'surferdata_id', $dataId
+                );
               }
             }
           }
         }
-        break;
-      case 'add_apikey' :
-        if (isset($this->params['id'])) {
-          if (!empty($this->editSurfer) || $this->loadSurfer($this->params['id'])) {
-            $this->addApiKey();
+      }
+      break;
+    case 'del_field' :
+      // Delete a profile data field
+      if ($this->module->hasPerm(4, TRUE)) {
+        if (isset($this->params['data_id']) && $this->params['data_id'] > 0 &&
+          isset($this->params['confirm_delete'])) {
+          // Get the field's category and order number
+          $orderData = NULL;
+          $sql = "SELECT surferdata_id, surferdata_order, surferdata_class
+                    FROM %s
+                   WHERE surferdata_id=%d";
+          $sqlParams = array($this->tableData, $this->params['data_id']);
+          $res = $this->databaseQueryFmt($sql, $sqlParams);
+          if ($row = $res->fetchRow(DB_FETCHMODE_ASSOC)) {
+            $orderData = array(
+              'class' => $row['surferdata_class'],
+              'order' => $row['surferdata_order']
+            );
+          }
+          // Clean up: Delete related titles first
+          $this->databaseDeleteRecord(
+            $this->tableDataTitles, 'surferdatatitle_field', $this->params['data_id']
+          );
+          $this->databaseDeleteRecord(
+            $this->tableData, 'surferdata_id', $this->params['data_id']
+          );
+          $this->addMsg(MSG_INFO, $this->_gt('Data field deleted.'));
+          // Close the gap in the field order
+          if ($orderData) {
+            $sql = "SELECT surferdata_id, surferdata_order
+            FROM %s
+            WHERE surferdata_class=%d
+            AND surferdata_order>%d";
+            $sqlParams = array(
+              $this->tableData,
+              $orderData['class'],
+              $orderData['order']
+            );
+            $fields = array();
+            $res = $this->databaseQueryFmt($sql, $sqlParams);
+            while ($row = $res->fetchRow(DB_FETCHMODE_ASSOC)) {
+              $fields[] = array(
+                'id' => $row['surferdata_id'],
+                'order' => $row['surferdata_order']
+              );
+            }
+            foreach ($fields as $field) {
+              $data = array('surferdata_order' => $field['order'] - 1);
+              $this->databaseUpdateRecord(
+                $this->tableData,
+                $data,
+                'surferdata_id',
+                $field['id']
+              );
+            }
           }
         }
-        break;
-      case 'do_export_fields' :
-        // Export profile data fields
-        if ($this->module->hasPerm(4, TRUE)) {
-          $this->exportProfileFields();
+      }
+      break;
+    case 'del_title' :
+      // Delete a profile data field's title
+      if ($this->module->hasPerm(4, TRUE)) {
+        if (isset($this->params['title_id']) && $this->params['title_id'] > 0 &&
+          isset($this->params['confirm_delete'])) {
+          $this->databaseDeleteRecord(
+            $this->tableDataTitles,
+            'surferdatatitle_id',
+            $this->params['title_id']
+          );
+          $this->addMsg(MSG_INFO, $this->_gt('Data field title deleted.'));
         }
-        break;
-      case 'do_import_fields' :
-        // Import profile data fields
-        if ($this->module->hasPerm(4, TRUE)) {
-          $this->importProfileFields();
-        }
-        break;
-      case 'add' :
-        // Add new surfer
-        $this->initializeSurferForm(NULL, 'add');
-        $ignore = isset($this->params['ignore_illegal']) && $this->params['ignore_illegal'];
-        if (($ignore && $this->checkInputs(TRUE)) ||
-            ($this->surferDialog->checkDialogInput() && $this->checkInputs())) {
-          if (FALSE !== ($newId = $this->insertSurfer())) {
-            $this->params['id'] = $newId;
-            $this->editSurfer = $this->loadSurfer($newId);
-            $this->initializeSurferForm($this->editSurfer, 'edit', TRUE);
-            $this->addMsg(MSG_INFO, $this->_gt("New surfer added."));
+      }
+      break;
+    case 'save_props' :
+      // Save properties for a data field
+      if ($this->module->hasPerm(4, TRUE)) {
+        if (isset($this->params['data_id']) && $this->params['data_id'] > 0 &&
+          isset($this->params['values'])) {
+          // Get the field's type to check the value
+          $sql = "SELECT surferdata_type, surferdata_id, surferdata_name
+          FROM %s
+          WHERE surferdata_id = %d";
+          $sqlParams = array($this->tableData, $this->params['data_id']);
+          $type = '';
+          $name = '';
+          if ($res = $this->databaseQueryFmt($sql, $sqlParams)) {
+            if ($row = $res->fetchRow(DB_FETCHMODE_ASSOC)) {
+              $type = $row['surferdata_type'];
+              $name = $row['surferdata_name'];
+            }
+          }
+          // Do we have a field?
+          if ($type == '') {
+            // No: issue an error message
+            $this->addMsg(MSG_ERROR, $this->_gt('This field does not exist.'));
           } else {
-            $this->addMsg(MSG_ERROR, $this->_gt("Error inserting surfer."));
+            // Yes: handle the new properties
+            if (($type == 'input' || $type == 'textarea') &&
+              !is_numeric($this->params['values'])) {
+              $this->addMsg(
+                MSG_ERROR,
+                $this->_gtf('The properties for "%s" must be a number.', $name)
+              );
+            } else {
+              // Save the value
+              $data = array('surferdata_values' => $this->params['values']);
+              $this->databaseUpdateRecord(
+                $this->tableData,
+                $data,
+                'surferdata_id',
+                $this->params['data_id']
+              );
+              $this->addMsg(
+                MSG_INFO,
+                $this->_gtf('Properties for "%s" successfully updated.', $name)
+              );
+            }
           }
         } else {
-          $this->editSurfer = $this->getNewSurferData();
+          $this->addMsg(MSG_ERROR, $this->_gt('Not enough data for field properties.'));
         }
-        break;
-      case 'delete' :
-        if ($this->module->hasPerm(6)) {
-          // Delete surfer
-          if (isset($this->params['id']) && trim($this->params['id']) != '' &&
-              isset($this->params['confirm_delete'])) {
-            $this->editSurfer = $this->loadSurfer($this->params['id']);
-            if (isset($this->editSurfer) && !$this->editSurfer['user_id']) {
-              if ($this->deleteSurfer($this->params['id'])) {
-                $this->addMsg(MSG_INFO, $this->_gt('Surfer deleted.'));
-                unset($this->editSurfer);
-                unset($this->params['id']);
+      }
+      break;
+    case 'del_class' :
+      // Delete a profile data field category
+      if ($this->module->hasPerm(4, TRUE)) {
+        if (isset($this->params['class_id']) && $this->params['class_id'] > 0 &&
+            isset($this->params['confirm_delete'])) {
+          // Get the class's order number
+          $sql = "SELECT surferdataclass_order
+                    FROM %s
+                   WHERE surferdataclass_id=%d";
+          $sqlParams = array($this->tableDataClasses, $this->params['class_id']);
+          $order = 0;
+          $res = $this->databaseQueryFmt($sql, $sqlParams);
+          if ($num = $res->fetchField()) {
+            $order = $num;
+          }
+          // Clean up: Delete related titles first
+          $this->databaseDeleteRecord(
+            $this->tableDataClassTitles, 'surferdataclasstitle_classid', $this->params['class_id']
+          );
+          $this->databaseDeleteRecord(
+            $this->tableDataClasses, 'surferdataclass_id', $this->params['class_id']
+          );
+          // Decrease the order of fields above the deleted one if appropriate
+          if ($order) {
+            // Get all fields with a higher order number
+            $sql = "SELECT surferdataclass_id,
+                           surferdataclass_order
+                      FROM %s
+                     WHERE surferdataclass_order > %d";
+            $sqlParams = array($this->tableDataClasses, $order);
+            // Save rows to avoid nested queries
+            $classes = array();
+            $res = $this->databaseQueryFmt($sql, $sqlParams);
+            while ($row = $res->fetchRow(DB_FETCHMODE_ASSOC)) {
+              $classes[] = array(
+                'id' => $row['surferdataclass_id'],
+                'order' => $row['surferdataclass_order']
+              );
+            }
+            foreach ($classes as $class) {
+              $data = array('surferdataclass_order' => $class['order'] - 1);
+              $this->databaseUpdateRecord(
+                $this->tableDataClasses,
+                $data,
+                'surferdataclass_id',
+                $class['id']
+              );
+            }
+          }
+          $this->addMsg(MSG_INFO, $this->_gt('Data category deleted.'));
+        }
+      }
+      break;
+    case 'move_class' :
+      // Move a profile data field category in sort order
+      if ($this->module->hasPerm(4, TRUE)) {
+        if (isset($this->params['class_id']) &&
+            $this->params['class_id'] > 0 &&
+            isset($this->params['dir']) &&
+            preg_match('/^(up|down)$/', $this->params['dir'])) {
+          $classId = $this->params['class_id'];
+          $dir = $this->params['dir'];
+          // Set order by id if there is no order yet
+          $this->orderDataClasses();
+          // Get the order number of the current category
+          $order = -1;
+          $sql = 'SELECT surferdataclass_order
+                    FROM %s
+                   WHERE surferdataclass_id = %d';
+          $res = $this->databaseQueryFmt(
+            $sql,
+            array($this->tableDataClasses, $classId)
+          );
+          if ($num = $res->fetchField()) {
+            $order = $num;
+          }
+          if ($order == -1) {
+            $this->addMsg(MSG_ERROR, 'Database error!');
+          } else {
+            // Check direction
+            if ($dir == 'up') {
+              // Moving 'up' (lower number)
+              // Get minimum order number
+              $sql = 'SELECT MIN(surferdataclass_order)
+                        FROM %s';
+              $res = $this->databaseQueryFmt($sql, array($this->tableDataClasses));
+              $minOrder = $res->fetchField();
+              // Act only if current field's order number is greater than minimum
+              if ($order > $minOrder) {
+                // Swap current field's order number with its predecessor's order number
+                $data = array('surferdataclass_order' => $order);
+                $this->databaseUpdateRecord(
+                  $this->tableDataClasses,
+                  $data,
+                  'surferdataclass_order',
+                  $order - 1
+                );
+                $data = array('surferdataclass_order' => $order - 1);
+                $this->databaseUpdateRecord(
+                  $this->tableDataClasses,
+                  $data,
+                  'surferdataclass_id',
+                  $classId
+                );
+              }
+            } else {
+              // Moving 'down' (higher number)
+              // Get maximum order number
+              $sql = 'SELECT MAX(surferdataclass_order)
+                        FROM %s';
+              $res = $this->databaseQueryFmt($sql, array($this->tableDataClasses));
+              $maxOrder = $res->fetchField();
+              // Act only if current field's order number is less than maximum
+              if ($order < $maxOrder) {
+                // Swap current field's order number with its successor's order number
+                $data = array('surferdataclass_order' => $order);
+                $this->databaseUpdateRecord(
+                  $this->tableDataClasses,
+                  $data,
+                  'surferdataclass_order',
+                  $order + 1
+                );
+                $data = array('surferdataclass_order' => $order + 1);
+                $this->databaseUpdateRecord(
+                  $this->tableDataClasses,
+                  $data,
+                  'surferdataclass_id',
+                  $classId
+                );
+              }
+            }
+          }
+        }
+      }
+      break;
+    case 'save_displayfield' :
+      // Save profile data field that can be used for surfer display
+      if ($this->module->hasPerm(4, TRUE)) {
+        if (isset($this->params['field']) &&
+            PapayaFilterFactory::isInteger($this->params['field'])) {
+          $this->setProperty('DISPLAY_PROFILE_FIELD', $this->params['field']);
+          $this->addMsg(MSG_INFO, $this->_gt('Saved new display profile field.'));
+        }
+      }
+      break;
+    case 'add_group' :
+      // Add a group
+      if ($newId = $this->addGroup()) {
+        $this->params['group_id'] = $newId;
+        $this->addMsg(MSG_INFO, $this->_gt("New group added."));
+      }
+      break;
+    case 'chg_group' :
+      // Change a group's definition
+      if (isset($this->params['group_id']) && ($this->params['group_id'] > 0)) {
+        $this->loadGroup($this->params['group_id']);
+        if (isset($this->surferGroup) && is_array($this->surferGroup)) {
+          $this->initializeGroupDialog($this->surferGroup);
+          if ($this->groupDialog->modified()) {
+            if ($this->groupDialog->checkDialogInput()) {
+              if ($this->saveGroup()) {
+                $this->addMsg(MSG_INFO, $this->_gt('Group modified.'));
               } else {
                 $this->addMsg(MSG_ERROR, $this->_gt('Database error!'));
               }
             }
           }
         }
-        break;
-      case 'add_rule' :
-        // Add a black list rule
-        if (isset($this->params['rule']) && trim($this->params['rule']) != '') {
-          if ($this->addHandleRuleToBlacklist($this->params['rule'])) {
-            $this->addMsg(
-              MSG_INFO,
-              sprintf($this->_gt('Added rule "%s" to black list.'), $this->params['rule'])
-            );
-          } else {
-            $this->addMsg(
-              MSG_ERROR,
-              sprintf(
-                $this->_gt('Could not add black list rule "%s".'),
-                $this->params['rule']
-              )
-            );
-          }
-        } else {
-          $this->addMsg(MSG_ERROR, $this->_gt('No black list rule provided.'));
-        }
-        break;
-      case 'del_rule' :
-        // Delete a black list rule
-        if (isset($this->params['rule_id']) && trim($this->params['rule_id']) != '') {
-          $success = $this->databaseDeleteRecord(
-            $this->tableBlacklist,
-            'blacklist_id',
-            $this->params['rule_id']
-          );
-          if ($success) {
-            $this->addMsg(MSG_INFO, $this->_gt('Black list rule deleted.'));
-          } else {
-            $this->addMsg(MSG_ERROR, $this->_gt('No such black list rule to delete.'));
-          }
-        } else {
-          $this->addMsg(MSG_ERROR, $this->_gt('No black list rule to delete.'));
-        }
-        break;
-      case 'add_email_rule' :
-        // Add a black list rule
-        if (isset($this->params['rule']) && trim($this->params['rule']) != '') {
-          if ($this->addEmailRuleToBlacklist($this->params['rule'])) {
-            $this->addMsg(
-              MSG_INFO,
-              sprintf($this->_gt('Added rule "%s" to black list.'), $this->params['rule'])
-            );
-          } else {
-            $this->addMsg(
-              MSG_ERROR,
-              sprintf(
-                $this->_gt('Could not add black list rule "%s".'),
-                $this->params['rule']
-              )
-            );
-          }
-        } else {
-          $this->addMsg(MSG_ERROR, $this->_gt('No black list rule provided.'));
-        }
-        break;
-      case 'del_email_rule' :
-        // Delete a black list rule
-        if (isset($this->params['rule_id']) && trim($this->params['rule_id']) != '') {
-          $success = $this->databaseDeleteRecord(
-            $this->tableBlacklist,
-            'blacklist_id',
-            $this->params['rule_id']
-          );
-          if ($success) {
-            $this->addMsg(MSG_INFO, $this->_gt('Black list rule deleted.'));
-          } else {
-            $this->addMsg(MSG_ERROR, $this->_gt('No such black list rule to delete.'));
-          }
-        } else {
-          $this->addMsg(MSG_ERROR, $this->_gt('No black list rule to delete.'));
-        }
-        break;
-      case 'delay_on' :
-        // Set mode for an email blacklist rule to delay
-        if (isset($this->params['rule_id']) && trim($this->params['rule_id']) != '') {
-          $success = $this->databaseUpdateRecord(
-            $this->tableBlacklist,
-            array('blacklist_delay' => 1),
-            'blacklist_id',
-            $this->params['rule_id']
-          );
-          if (FALSE !== $success) {
-            $this->addMsg(MSG_INFO, $this->_gt('Blacklist rule mode set to delay.'));
-          } else {
-            $this->addMsg(MSG_ERROR, $this->_gt('Could not set blacklist rule mode to delay.'));
-          }
-        } else {
-          $this->addMsg(MSG_ERROR, $this->_gt('No black list rule to alter the mode for.'));
-        }
-        break;
-      case 'delay_off' :
-        // Set mode for an email blacklist rule to reject
-        if (isset($this->params['rule_id']) && trim($this->params['rule_id']) != '') {
-          $success = $this->databaseUpdateRecord(
-            $this->tableBlacklist,
-            array('blacklist_delay' => 0),
-            'blacklist_id',
-            $this->params['rule_id']
-          );
-          if (FALSE !== $success) {
-            $this->addMsg(MSG_INFO, $this->_gt('Blacklist rule mode set to reject.'));
-          } else {
-            $this->addMsg(MSG_ERROR, $this->_gt('Could not set blacklist rule mode to reject.'));
-          }
-        } else {
-          $this->addMsg(MSG_ERROR, $this->_gt('No black list rule to alter the mode for.'));
-        }
-        break;
-      case 'add_password_rule' :
-        // Add a black list rule
-        if (isset($this->params['rule']) && trim($this->params['rule']) != '') {
-          if ($this->addPasswordRuleToBlacklist($this->params['rule'])) {
-            $this->addMsg(
-              MSG_INFO,
-              sprintf($this->_gt('Added rule "%s" to black list.'), $this->params['rule'])
-            );
-          } else {
-            $this->addMsg(
-              MSG_ERROR,
-              sprintf(
-                $this->_gt('Could not add black list rule "%s".'),
-                $this->params['rule']
-              )
-            );
-          }
-        } else {
-          $this->addMsg(MSG_ERROR, $this->_gt('No black list rule provided.'));
-        }
-        break;
-      case 'del_password_rule' :
-        // Delete a black list rule
-        if (isset($this->params['rule_id']) && trim($this->params['rule_id']) != '') {
-          $success = $this->databaseDeleteRecord(
-            $this->tableBlacklist,
-            'blacklist_id',
-            $this->params['rule_id']
-          );
-          if ($success) {
-            $this->addMsg(MSG_INFO, $this->_gt('Black list rule deleted.'));
-          } else {
-            $this->addMsg(MSG_ERROR, $this->_gt('No such black list rule to delete.'));
-          }
-        } else {
-          $this->addMsg(MSG_ERROR, $this->_gt('No black list rule to delete.'));
-        }
-        break;
-      case 'del_request' :
-        // Delete change request(s)
-        if (isset($this->params['request_id']) && $this->params['request_id'] > 0 &&
-            isset($this->params['confirm_delete'])) {
-          // While we're at it, delete all expired requests and
-          // any request of the same type as the clicked one
-          $sql = "SELECT surferchangerequest_type
-                    FROM %s
-                   WHERE surferchangerequest_id = %d";
-          $res = $this->databaseQueryFmt(
-            $sql,
-            array(
-              $this->tableChangeRequests,
-              $this->params['request_id']
-            )
-          );
-          if ($row = $res->fetchRow(DB_FETCHMODE_ASSOC)) {
-            $type = $row['surferchangerequest_type'];
-            $this->databaseDeleteRecord(
-              $this->tableChangeRequests,
-              array(
-                'surferchangerequest_surferid' => $this->params['id'],
-                'surferchangerequest_type' => $type
-              )
-            );
-          }
-          $sql = "DELETE FROM %s WHERE surferchangerequest_expiry < %d";
-          $this->databaseQueryFmt($sql, array($this->tableChangeRequests, time()));
-          $this->addMsg(MSG_INFO, $this->_gt('Requests deleted.'));
-        }
-        break;
-      case 'move_field' :
-        // Move a profile data field in sort order
-        if ($this->module->hasPerm(4, TRUE)) {
-          if (isset($this->params['data_id']) &&
-            $this->params['data_id'] > 0 &&
-          isset($this->params['class_id']) &&
-          $this->params['class_id'] > 0 &&
-          isset($this->params['dir']) &&
-          preg_match('/^(up|down)$/', $this->params['dir'])) {
-            $dataId = $this->params['data_id'];
-            $classId = $this->params['class_id'];
-            $dir = $this->params['dir'];
-            // Set order in current class by name if there is no order yet
-            $this->orderDataFields($classId);
-            // Get the order number of the current field
-            $order = -1;
-            $sql = 'SELECT surferdata_order
-                      FROM %s
-                     WHERE surferdata_id=%d';
-            $res = $this->databaseQueryFmt(
-              $sql, array($this->tableData, $dataId)
-            );
-            if ($num = $res->fetchField()) {
-              $order = $num;
-            }
-            if ($order == -1) {
-              $this->addMsg(MSG_ERROR, 'Database error!');
-            } else {
-              // Check direction
-              if ($dir == 'up') {
-                // Moving 'up' (lower number)
-                // Get minimum order number
-                $sql = 'SELECT MIN(surferdata_order)
-                          FROM %s
-                         WHERE surferdata_class=%d
-                         GROUP BY surferdata_class';
-                $res = $this->databaseQueryFmt(
-                  $sql,
-                  array($this->tableData, $classId)
-                );
-                $minOrder = $res->fetchField();
-                // Act only if current field's order number is greater than minimum
-                if ($order > $minOrder) {
-                  // Swap current field's order number with its predecessor's order number
-                  $data = array('surferdata_order' => $order);
-                  $this->databaseUpdateRecord(
-                    $this->tableData,
-                    $data,
-                    'surferdata_order',
-                    $order - 1);
-                  $data = array('surferdata_order' => $order - 1);
-                  $this->databaseUpdateRecord(
-                    $this->tableData,
-                    $data,
-                    'surferdata_id',
-                    $dataId
-                  );
-                }
-              } else {
-                // Moving 'down' (higher number)
-                // Get maximum order number
-                $sql = 'SELECT MAX(surferdata_order)
-                          FROM %s
-                         WHERE surferdata_class=%d
-                         GROUP BY surferdata_class';
-                $res = $this->databaseQueryFmt(
-                  $sql,
-                  array($this->tableData, $classId)
-                );
-                $maxOrder = $res->fetchField();
-                // Act only if current field's order number is less than maximum
-                if ($order < $maxOrder) {
-                  // Swap current field's order number with its successor's order number
-                  $data = array('surferdata_order' => $order);
-                  $this->databaseUpdateRecord(
-                    $this->tableData, $data, 'surferdata_order', $order + 1
-                  );
-                  $data = array('surferdata_order' => $order + 1);
-                  $this->databaseUpdateRecord(
-                    $this->tableData, $data, 'surferdata_id', $dataId
-                  );
-                }
-              }
-            }
-          }
-        }
-        break;
-      case 'del_field' :
-        // Delete a profile data field
-        if ($this->module->hasPerm(4, TRUE)) {
-          if (isset($this->params['data_id']) && $this->params['data_id'] > 0 &&
-            isset($this->params['confirm_delete'])) {
-            // Get the field's category and order number
-            $orderData = NULL;
-            $sql = "SELECT surferdata_id, surferdata_order, surferdata_class
-                      FROM %s
-                     WHERE surferdata_id=%d";
-            $sqlParams = array($this->tableData, $this->params['data_id']);
-            $res = $this->databaseQueryFmt($sql, $sqlParams);
-            if ($row = $res->fetchRow(DB_FETCHMODE_ASSOC)) {
-              $orderData = array(
-                'class' => $row['surferdata_class'],
-                'order' => $row['surferdata_order']
-              );
-            }
-            // Clean up: Delete related titles first
-            $this->databaseDeleteRecord(
-              $this->tableDataTitles, 'surferdatatitle_field', $this->params['data_id']
-            );
-            $this->databaseDeleteRecord(
-              $this->tableData, 'surferdata_id', $this->params['data_id']
-            );
-            $this->addMsg(MSG_INFO, $this->_gt('Data field deleted.'));
-            // Close the gap in the field order
-            if ($orderData) {
-              $sql = "SELECT surferdata_id, surferdata_order
-              FROM %s
-              WHERE surferdata_class=%d
-              AND surferdata_order>%d";
-              $sqlParams = array(
-                $this->tableData,
-                $orderData['class'],
-                $orderData['order']
-              );
-              $fields = array();
-              $res = $this->databaseQueryFmt($sql, $sqlParams);
-              while ($row = $res->fetchRow(DB_FETCHMODE_ASSOC)) {
-                $fields[] = array(
-                  'id' => $row['surferdata_id'],
-                  'order' => $row['surferdata_order']
-                );
-              }
-              foreach ($fields as $field) {
-                $data = array('surferdata_order' => $field['order'] - 1);
-                $this->databaseUpdateRecord(
-                  $this->tableData,
-                  $data,
-                  'surferdata_id',
-                  $field['id']
-                );
-              }
-            }
-          }
-        }
-        break;
-      case 'del_title' :
-        // Delete a profile data field's title
-        if ($this->module->hasPerm(4, TRUE)) {
-          if (isset($this->params['title_id']) && $this->params['title_id'] > 0 &&
-            isset($this->params['confirm_delete'])) {
-            $this->databaseDeleteRecord(
-              $this->tableDataTitles,
-              'surferdatatitle_id',
-              $this->params['title_id']
-            );
-            $this->addMsg(MSG_INFO, $this->_gt('Data field title deleted.'));
-          }
-        }
-        break;
-      case 'save_props' :
-        // Save properties for a data field
-        if ($this->module->hasPerm(4, TRUE)) {
-          if (isset($this->params['data_id']) && $this->params['data_id'] > 0 &&
-            isset($this->params['values'])) {
-            // Get the field's type to check the value
-            $sql = "SELECT surferdata_type, surferdata_id, surferdata_name
-            FROM %s
-            WHERE surferdata_id = %d";
-            $sqlParams = array($this->tableData, $this->params['data_id']);
-            $type = '';
-            $name = '';
-            if ($res = $this->databaseQueryFmt($sql, $sqlParams)) {
-              if ($row = $res->fetchRow(DB_FETCHMODE_ASSOC)) {
-                $type = $row['surferdata_type'];
-                $name = $row['surferdata_name'];
-              }
-            }
-            // Do we have a field?
-            if ($type == '') {
-              // No: issue an error message
-              $this->addMsg(MSG_ERROR, $this->_gt('This field does not exist.'));
-            } else {
-              // Yes: handle the new properties
-              if (($type == 'input' || $type == 'textarea') &&
-                !is_numeric($this->params['values'])) {
-                $this->addMsg(
-                  MSG_ERROR,
-                  $this->_gtf('The properties for "%s" must be a number.', $name)
-                );
-              } else {
-                // Save the value
-                $data = array('surferdata_values' => $this->params['values']);
-                $this->databaseUpdateRecord(
-                  $this->tableData,
-                  $data,
-                  'surferdata_id',
-                  $this->params['data_id']
-                );
-                $this->addMsg(
-                  MSG_INFO,
-                  $this->_gtf('Properties for "%s" successfully updated.', $name)
-                );
-              }
-            }
-          } else {
-            $this->addMsg(MSG_ERROR, $this->_gt('Not enough data for field properties.'));
-          }
-        }
-        break;
-      case 'del_class' :
-        // Delete a profile data field category
-        if ($this->module->hasPerm(4, TRUE)) {
-          if (isset($this->params['class_id']) && $this->params['class_id'] > 0 &&
-              isset($this->params['confirm_delete'])) {
-            // Get the class's order number
-            $sql = "SELECT surferdataclass_order
-                      FROM %s
-                     WHERE surferdataclass_id=%d";
-            $sqlParams = array($this->tableDataClasses, $this->params['class_id']);
-            $order = 0;
-            $res = $this->databaseQueryFmt($sql, $sqlParams);
-            if ($num = $res->fetchField()) {
-              $order = $num;
-            }
-            // Clean up: Delete related titles first
-            $this->databaseDeleteRecord(
-              $this->tableDataClassTitles, 'surferdataclasstitle_classid', $this->params['class_id']
-            );
-            $this->databaseDeleteRecord(
-              $this->tableDataClasses, 'surferdataclass_id', $this->params['class_id']
-            );
-            // Decrease the order of fields above the deleted one if appropriate
-            if ($order) {
-              // Get all fields with a higher order number
-              $sql = "SELECT surferdataclass_id,
-                             surferdataclass_order
-                        FROM %s
-                       WHERE surferdataclass_order > %d";
-              $sqlParams = array($this->tableDataClasses, $order);
-              // Save rows to avoid nested queries
-              $classes = array();
-              $res = $this->databaseQueryFmt($sql, $sqlParams);
-              while ($row = $res->fetchRow(DB_FETCHMODE_ASSOC)) {
-                $classes[] = array(
-                  'id' => $row['surferdataclass_id'],
-                  'order' => $row['surferdataclass_order']
-                );
-              }
-              foreach ($classes as $class) {
-                $data = array('surferdataclass_order' => $class['order'] - 1);
-                $this->databaseUpdateRecord(
-                  $this->tableDataClasses,
-                  $data,
-                  'surferdataclass_id',
-                  $class['id']
-                );
-              }
-            }
-            $this->addMsg(MSG_INFO, $this->_gt('Data category deleted.'));
-          }
-        }
-        break;
-      case 'move_class' :
-        // Move a profile data field category in sort order
-        if ($this->module->hasPerm(4, TRUE)) {
-          if (isset($this->params['class_id']) &&
-              $this->params['class_id'] > 0 &&
-              isset($this->params['dir']) &&
-              preg_match('/^(up|down)$/', $this->params['dir'])) {
-            $classId = $this->params['class_id'];
-            $dir = $this->params['dir'];
-            // Set order by id if there is no order yet
-            $this->orderDataClasses();
-            // Get the order number of the current category
-            $order = -1;
-            $sql = 'SELECT surferdataclass_order
-                      FROM %s
-                     WHERE surferdataclass_id = %d';
-            $res = $this->databaseQueryFmt(
-              $sql,
-              array($this->tableDataClasses, $classId)
-            );
-            if ($num = $res->fetchField()) {
-              $order = $num;
-            }
-            if ($order == -1) {
-              $this->addMsg(MSG_ERROR, 'Database error!');
-            } else {
-              // Check direction
-              if ($dir == 'up') {
-                // Moving 'up' (lower number)
-                // Get minimum order number
-                $sql = 'SELECT MIN(surferdataclass_order)
-                          FROM %s';
-                $res = $this->databaseQueryFmt($sql, array($this->tableDataClasses));
-                $minOrder = $res->fetchField();
-                // Act only if current field's order number is greater than minimum
-                if ($order > $minOrder) {
-                  // Swap current field's order number with its predecessor's order number
-                  $data = array('surferdataclass_order' => $order);
-                  $this->databaseUpdateRecord(
-                    $this->tableDataClasses,
-                    $data,
-                    'surferdataclass_order',
-                    $order - 1
-                  );
-                  $data = array('surferdataclass_order' => $order - 1);
-                  $this->databaseUpdateRecord(
-                    $this->tableDataClasses,
-                    $data,
-                    'surferdataclass_id',
-                    $classId
-                  );
-                }
-              } else {
-                // Moving 'down' (higher number)
-                // Get maximum order number
-                $sql = 'SELECT MAX(surferdataclass_order)
-                          FROM %s';
-                $res = $this->databaseQueryFmt($sql, array($this->tableDataClasses));
-                $maxOrder = $res->fetchField();
-                // Act only if current field's order number is less than maximum
-                if ($order < $maxOrder) {
-                  // Swap current field's order number with its successor's order number
-                  $data = array('surferdataclass_order' => $order);
-                  $this->databaseUpdateRecord(
-                    $this->tableDataClasses,
-                    $data,
-                    'surferdataclass_order',
-                    $order + 1
-                  );
-                  $data = array('surferdataclass_order' => $order + 1);
-                  $this->databaseUpdateRecord(
-                    $this->tableDataClasses,
-                    $data,
-                    'surferdataclass_id',
-                    $classId
-                  );
-                }
-              }
-            }
-          }
-        }
-        break;
-      case 'save_displayfield' :
-        // Save profile data field that can be used for surfer display
-        if ($this->module->hasPerm(4, TRUE)) {
-          if (isset($this->params['field']) &&
-              PapayaFilterFactory::isInteger($this->params['field'])) {
-            $this->setProperty('DISPLAY_PROFILE_FIELD', $this->params['field']);
-            $this->addMsg(MSG_INFO, $this->_gt('Saved new display profile field.'));
-          }
-        }
-        break;
-      case 'add_group' :
-        // Add a group
-        if ($newId = $this->addGroup()) {
-          $this->params['group_id'] = $newId;
-          $this->addMsg(MSG_INFO, $this->_gt("New group added."));
-        }
-        break;
-      case 'chg_group' :
-        // Change a group's definition
-        if (isset($this->params['group_id']) && ($this->params['group_id'] > 0)) {
-          $this->loadGroup($this->params['group_id']);
-          if (isset($this->surferGroup) && is_array($this->surferGroup)) {
-            $this->initializeGroupDialog($this->surferGroup);
-            if ($this->groupDialog->modified()) {
-              if ($this->groupDialog->checkDialogInput()) {
-                if ($this->saveGroup()) {
-                  $this->addMsg(MSG_INFO, $this->_gt('Group modified.'));
-                } else {
-                  $this->addMsg(MSG_ERROR, $this->_gt('Database error!'));
-                }
-              }
-            }
-          }
-        }
-        break;
-      case 'del_group' :
-        // Delete a group
-        if (isset($this->params['group_id']) && $this->params['group_id'] > 0 &&
-            isset($this->params['confirm_delete'])) {
-          if ($this->deleteGroup($this->params['group_id'])) {
-            $this->addMsg(MSG_INFO, $this->_gt('Group deleted.'));
-            unset($this->params['group_id']);
-          } else {
-            $this->addMsg(MSG_ERROR, $this->_gt('Database error!'));
-          }
-        }
-        break;
-      case 'chg_perm' :
-        // Change a permission
-        if (isset($this->params['perm_id']) && ($this->params['perm_id'] > 0)) {
-          $this->editPerm = $this->loadPerm($this->params['perm_id']);
-          if (isset($this->editPerm) && is_array($this->editPerm)) {
-            $this->initializePermDialog($this->editPerm);
-            if ($this->permDialog->modified()) {
-              if ($this->permDialog->checkDialogInput()
-                  && $this->checkPermInputs()) {
-                if ($this->savePerm()) {
-                  $this->addMsg(MSG_INFO, $this->_gt('Permission modified.'));
-                }
-              }
-            }
-          }
-        }
-        break;
-      case 'addlink' :
-        // Create a permission link
-        if (isset($this->params['group_id']) && $this->params['group_id'] > 0 &&
-            isset($this->params['perm_id']) && $this->params['perm_id'] > 0) {
-          // Check whether the link already exists
-          $sql = "SELECT COUNT(*)
-                    FROM %s
-                   WHERE surfer_permid = %d
-                     AND surfergroup_id = %d";
-          $sqlParams = array($this->tableLink, $this->params['perm_id'], $this->params['group_id']);
-          $exists = 0;
-          if ($res = $this->databaseQueryFmt($sql, $sqlParams)) {
-            if ($num = $res->fetchField()) {
-              $exists = $num;
-            }
-          }
-          if ($exists > 0) {
-            $success = TRUE;
-          } else {
-            $data = array(
-              'surfer_permid' => $this->params['perm_id'],
-              'surfergroup_id' => $this->params['group_id']
-            );
-            $success = $this->databaseInsertRecord($this->tableLink, NULL, $data);
-          }
-          if (FALSE !== $success) {
-            $this->addMsg(MSG_INFO, $this->_gt('Permission linked.'));
-          } else {
-            $this->addMsg(MSG_ERROR, $this->_gt('Database error!'));
-          }
-        }
-        break;
-      case 'dellink' :
-        // Remove a permission link
-        if (isset($this->params['group_id']) && $this->params['group_id'] > 0 &&
-            isset($this->params['perm_id']) && $this->params['perm_id'] > 0) {
-          $filter = array(
-            'surfer_permid' => (int)$this->params['perm_id'],
-            'surfergroup_id' => (int)$this->params['group_id']
-          );
-          if ($this->databaseDeleteRecord($this->tableLink, $filter) !== FALSE) {
-            $this->addMsg(MSG_INFO, $this->_gt('Link deleted.'));
-          } else {
-            $this->addMsg(MSG_ERROR, $this->_gt('Database error!'));
-          }
-        }
-        break;
-      case 'perm_add' :
-        // Add a permission
-        $newId = $this->databaseInsertRecord(
-          $this->tablePerm,
-          'surferperm_id',
-          array(
-            'surferperm_title' => $this->_gt('New permission'),
-            'surferperm_active' => FALSE
-          )
-        );
-        if ($newId) {
-          $this->addMsg(MSG_INFO, $this->_gt('Permission added.'));
-          $this->params['perm_id'] = $newId;
+      }
+      break;
+    case 'del_group' :
+      // Delete a group
+      if (isset($this->params['group_id']) && $this->params['group_id'] > 0 &&
+          isset($this->params['confirm_delete'])) {
+        if ($this->deleteGroup($this->params['group_id'])) {
+          $this->addMsg(MSG_INFO, $this->_gt('Group deleted.'));
+          unset($this->params['group_id']);
         } else {
           $this->addMsg(MSG_ERROR, $this->_gt('Database error!'));
         }
-        break;
-      case 'perm_del' :
-        // Delete a permission
-        if (isset($this->params['perm_id']) && $this->params['perm_id'] > 0 &&
-            isset($this->params['confirm_delete'])) {
-          if ($this->deletePerm($this->params['perm_id'])) {
-            $this->addMsg(MSG_INFO, $this->_gt('Permission deleted.'));
-            unset($this->params['perm_id']);
-          } else {
-            $this->addMsg(MSG_ERROR, $this->_gt('Database error!'));
-          }
-        }
-        break;
-      case 'editor_add' :
-        // Add an editor user
-        if (isset($this->params['confirm_editor_add'])
-            && $this->params['confirm_editor_add']
-            && ($this->editSurfer = $this->loadSurfer($this->params['id']))
-            && trim($this->editSurfer['auth_user_id']) == '') {
-          if ($this->addEditorUser()) {
-            $this->addMsg(MSG_INFO, $this->_gt('Editor added.'));
-            unset($this->editSurfer);
-            unset($this->params['cmd']);
-          } else {
-            $this->addMsg(MSG_ERROR, $this->_gt('Database error!'));
-          }
-        }
-        break;
-      case 'save_field' :
-        // Assume no PCRE error
-        if ($this->module->hasPerm(4, TRUE)) {
-          $err = FALSE;
-          if (!isset($this->params['field_name']) || trim($this->params['field_name']) == '') {
-            $this->addMsg(
-              MSG_ERROR, $this->_gt('You need to enter a field name.')
-            );
-            $err = TRUE;
-          }
-          if (!$err) {
-            if (isset($this->params['create']) && $this->params['create'] == 1) {
-              $new = TRUE;
-            } else {
-              $new = FALSE;
-            }
-            // Get data
-            $data = array(
-              'surferdata_name' => $this->params['field_name'],
-              'surferdata_class' => $this->params['field_class'],
-              'surferdata_type' => $this->params['field_type'],
-              'surferdata_check' => $this->params['field_check'],
-              'surferdata_available' => $this->params['field_available'],
-              'surferdata_mandatory' => $this->params['field_mandatory'],
-              'surferdata_needsapproval' => $this->params['field_needsapproval'],
-              'surferdata_approvaldefault' => $this->params['field_approved']
-              );
-            // For a new field, add default parameters for input fields or checkboxes
-            if ($new) {
-              if ($this->params['field_type'] == 'input') {
-                $data['surferdata_values'] = $this->getProperty('INPUT_MAXLENGTH', 50);
-              } elseif ($this->params['field_type'] == 'textarea') {
-                $data['surferdata_values'] = $this->getProperty('TEXTAREA_LINES');
-              }
-            }
-            // Check whether a field with the selected name exists
-            $sql = "SELECT COUNT(*)
-                      FROM %s
-                     WHERE surferdata_name='%s'";
-            // Add exclusion for current field if we're editing an existing one
-            if (!$new) {
-              $sql .= sprintf(" AND surferdata_id != %d", @(int)$this->params['data_id']);
-            }
-            $sqlParams = array($this->tableData, $this->params['field_name']);
-            if ($res = $this->databaseQueryFmt($sql, $sqlParams)) {
-              if ($num = $res->fetchField()) {
-                if ($num > 0) {
-                  $this->addMsg(MSG_ERROR, $this->_gt('Field of this name already exists.'));
-                  break;
-                }
-              }
-            }
-            // If check type is 'PCRE', get the value of the PCRE text field
-            if ($data['surferdata_check'] == -1) {
-              // If PCRE field is empty, report an error and re-display edit form
-              if (trim($this->params['field_pcre']) == '') {
-                $this->addMsg(
-                  MSG_ERROR,
-                  $this->_gt('Please enter PCRE value or change check type.')
-                );
-                $err = TRUE;
-              } else {
-                $data['surferdata_check'] = $this->params['field_pcre'];
-              }
-            }
-            if (!$err) {
-              if ($new) {
-                // create new record
-                $fieldId = $this->databaseInsertRecord(
-                  $this->tableData,
-                  'surferdata_id',
-                  $data
-                );
-                if ($fieldId > 0) {
-                  // This field is will get the highest order number
-                  $this->orderDataFields($this->params['field_class'], $fieldId);
-                  $this->addMsg(
-                    MSG_INFO,
-                    $this->_gt('Field created').': '.$this->params['field_name']
-                  );
-                } else {
-                  $this->addMsg(MSG_ERROR, $this->_gt('Input Error. Please check your input.'));
-                }
-              } else {
-                // Update record
-                $id = $this->params['data_id'];
-                $this->databaseUpdateRecord($this->tableData, $data, 'surferdata_id', $id);
-                $this->addMsg(
-                  MSG_INFO,
-                  $this->_gt('Field updated.').': '.$this->params['field_name']
-                );
-                // Adjust order if category changed
-                if ($this->params['field_class'] != $this->params['field_class_old']) {
-                  // Get the field's current order
-                  $order = 0;
-                  $sql = "SELECT surferdata_order
-                            FROM %s
-                           WHERE surferdata_id=%d";
-                  $sqlParams = array($this->tableData, $id);
-                  $res = $this->databaseQueryFmt($sql, $sqlParams);
-                  if ($num = $res->fetchField()) {
-                    $order = $num;
-                  }
-                  // Close gap in the old category
-                  $sql = "SELECT surferdata_id, surferdata_order
-                            FROM %s
-                           WHERE surferdata_class=%d
-                             AND surferdata_order>%d";
-                  $sqlParams = array(
-                    $this->tableData,
-                    $this->params['field_class_old'],
-                    $order
-                  );
-                  $fields = array();
-                  $res = $this->databaseQueryFmt($sql, $sqlParams);
-                  while ($row = $res->fetchRow(DB_FETCHMODE_ASSOC)) {
-                    array_push(
-                      $fields,
-                      array(
-                        'id' => $row['surferdata_id'],
-                        'order' => $row['surferdata_order']
-                      )
-                    );
-                  }
-                  foreach ($fields as $field) {
-                    $data = array('surferdata_order' => $field['order'] - 1);
-                    $this->databaseUpdateRecord(
-                      $this->tableData,
-                      $data,
-                      'surferdata_id',
-                      $field['id']
-                    );
-                  }
-                  // Now assign the highest order number of the new category
-                  // to the field
-                  $this->orderDataFields($this->params['field_class'], $id);
-                }
+      }
+      break;
+    case 'chg_perm' :
+      // Change a permission
+      if (isset($this->params['perm_id']) && ($this->params['perm_id'] > 0)) {
+        $this->editPerm = $this->loadPerm($this->params['perm_id']);
+        if (isset($this->editPerm) && is_array($this->editPerm)) {
+          $this->initializePermDialog($this->editPerm);
+          if ($this->permDialog->modified()) {
+            if ($this->permDialog->checkDialogInput()
+                && $this->checkPermInputs()) {
+              if ($this->savePerm()) {
+                $this->addMsg(MSG_INFO, $this->_gt('Permission modified.'));
               }
             }
           }
         }
-        break;
-      case 'save_class' :
-        // Save a profile data category
-        if ($this->module->hasPerm(4, TRUE)) {
-          $this->saveDataClass();
+      }
+      break;
+    case 'addlink' :
+      // Create a permission link
+      if (isset($this->params['group_id']) && $this->params['group_id'] > 0 &&
+          isset($this->params['perm_id']) && $this->params['perm_id'] > 0) {
+        // Check whether the link already exists
+        $sql = "SELECT COUNT(*)
+                  FROM %s
+                 WHERE surfer_permid = %d
+                   AND surfergroup_id = %d";
+        $sqlParams = array($this->tableLink, $this->params['perm_id'], $this->params['group_id']);
+        $exists = 0;
+        if ($res = $this->databaseQueryFmt($sql, $sqlParams)) {
+          if ($num = $res->fetchField()) {
+            $exists = $num;
+          }
         }
-        break;
-      case 'save_title' :
-        // Save a profile field title
-        // Check whether a new title is created or an existing one is updated
-        if ($this->module->hasPerm(4, TRUE)) {
+        if ($exists > 0) {
+          $success = TRUE;
+        } else {
+          $data = array(
+            'surfer_permid' => $this->params['perm_id'],
+            'surfergroup_id' => $this->params['group_id']
+          );
+          $success = $this->databaseInsertRecord($this->tableLink, NULL, $data);
+        }
+        if (FALSE !== $success) {
+          $this->addMsg(MSG_INFO, $this->_gt('Permission linked.'));
+        } else {
+          $this->addMsg(MSG_ERROR, $this->_gt('Database error!'));
+        }
+      }
+      break;
+    case 'dellink' :
+      // Remove a permission link
+      if (isset($this->params['group_id']) && $this->params['group_id'] > 0 &&
+          isset($this->params['perm_id']) && $this->params['perm_id'] > 0) {
+        $filter = array(
+          'surfer_permid' => (int)$this->params['perm_id'],
+          'surfergroup_id' => (int)$this->params['group_id']
+        );
+        if ($this->databaseDeleteRecord($this->tableLink, $filter) !== FALSE) {
+          $this->addMsg(MSG_INFO, $this->_gt('Link deleted.'));
+        } else {
+          $this->addMsg(MSG_ERROR, $this->_gt('Database error!'));
+        }
+      }
+      break;
+    case 'perm_add' :
+      // Add a permission
+      $newId = $this->databaseInsertRecord(
+        $this->tablePerm,
+        'surferperm_id',
+        array(
+          'surferperm_title' => $this->_gt('New permission'),
+          'surferperm_active' => FALSE
+        )
+      );
+      if ($newId) {
+        $this->addMsg(MSG_INFO, $this->_gt('Permission added.'));
+        $this->params['perm_id'] = $newId;
+      } else {
+        $this->addMsg(MSG_ERROR, $this->_gt('Database error!'));
+      }
+      break;
+    case 'perm_del' :
+      // Delete a permission
+      if (isset($this->params['perm_id']) && $this->params['perm_id'] > 0 &&
+          isset($this->params['confirm_delete'])) {
+        if ($this->deletePerm($this->params['perm_id'])) {
+          $this->addMsg(MSG_INFO, $this->_gt('Permission deleted.'));
+          unset($this->params['perm_id']);
+        } else {
+          $this->addMsg(MSG_ERROR, $this->_gt('Database error!'));
+        }
+      }
+      break;
+    case 'editor_add' :
+      // Add an editor user
+      if (isset($this->params['confirm_editor_add'])
+          && $this->params['confirm_editor_add']
+          && ($this->editSurfer = $this->loadSurfer($this->params['id']))
+          && trim($this->editSurfer['auth_user_id']) == '') {
+        if ($this->addEditorUser()) {
+          $this->addMsg(MSG_INFO, $this->_gt('Editor added.'));
+          unset($this->editSurfer);
+          unset($this->params['cmd']);
+        } else {
+          $this->addMsg(MSG_ERROR, $this->_gt('Database error!'));
+        }
+      }
+      break;
+    case 'save_field' :
+      // Assume no PCRE error
+      if ($this->module->hasPerm(4, TRUE)) {
+        $err = FALSE;
+        if (!isset($this->params['field_name']) || trim($this->params['field_name']) == '') {
+          $this->addMsg(
+            MSG_ERROR, $this->_gt('You need to enter a field name.')
+          );
+          $err = TRUE;
+        }
+        if (!$err) {
           if (isset($this->params['create']) && $this->params['create'] == 1) {
             $new = TRUE;
           } else {
             $new = FALSE;
           }
-          // Get data for field update
+          // Get data
           $data = array(
-            'surferdatatitle_lang' => $this->params['language'],
-            'surferdatatitle_title' => $this->params['title']
+            'surferdata_name' => $this->params['field_name'],
+            'surferdata_class' => $this->params['field_class'],
+            'surferdata_type' => $this->params['field_type'],
+            'surferdata_check' => $this->params['field_check'],
+            'surferdata_available' => $this->params['field_available'],
+            'surferdata_mandatory' => $this->params['field_mandatory'],
+            'surferdata_needsapproval' => $this->params['field_needsapproval'],
+            'surferdata_approvaldefault' => $this->params['field_approved']
             );
+          // For a new field, add default parameters for input fields or checkboxes
           if ($new) {
-            // New title
-            // Check whether there already is a title for this language
-            $sql = 'SELECT COUNT(*)
-                      FROM %s
-                     WHERE surferdatatitle_field=%d
-                       AND surferdatatitle_lang=%d';
-            $res = $this->databaseQueryFmt(
-              $sql,
-              array(
-                $this->tableDataTitles, $this->params['data_id'], $this->params['language']
-              )
-            );
+            if ($this->params['field_type'] == 'input') {
+              $data['surferdata_values'] = $this->getProperty('INPUT_MAXLENGTH', 50);
+            } elseif ($this->params['field_type'] == 'textarea') {
+              $data['surferdata_values'] = $this->getProperty('TEXTAREA_LINES');
+            }
+          }
+          // Check whether a field with the selected name exists
+          $sql = "SELECT COUNT(*)
+                    FROM %s
+                   WHERE surferdata_name='%s'";
+          // Add exclusion for current field if we're editing an existing one
+          if (!$new) {
+            $sql .= sprintf(" AND surferdata_id != %d", @(int)$this->params['data_id']);
+          }
+          $sqlParams = array($this->tableData, $this->params['field_name']);
+          if ($res = $this->databaseQueryFmt($sql, $sqlParams)) {
             if ($num = $res->fetchField()) {
               if ($num > 0) {
-                // Found a title: Display error message, get out
-                $this->addMsg(
-                  MSG_WARNING,
-                  $this->_gt('Title already exists.').
-                  sprintf(' in %s', $this->getLanguageTitle($this->params['language']))
-                );
-                return;
+                $this->addMsg(MSG_ERROR, $this->_gt('Field of this name already exists.'));
+                break;
               }
             }
-            // Otherwise insert record
-            $data['surferdatatitle_field'] = $this->params['data_id'];
-            $success = $this->databaseInsertRecord(
-              $this->tableDataTitles,
-              'surferdatatitle_id',
-              $data);
-            if ($success) {
-              $this->addMsg(MSG_INFO, $this->_gt('Title created').': '. $this->params['title']);
+          }
+          // If check type is 'PCRE', get the value of the PCRE text field
+          if ($data['surferdata_check'] == -1) {
+            // If PCRE field is empty, report an error and re-display edit form
+            if (trim($this->params['field_pcre']) == '') {
+              $this->addMsg(
+                MSG_ERROR,
+                $this->_gt('Please enter PCRE value or change check type.')
+              );
+              $err = TRUE;
             } else {
-              $this->addMsg(MSG_ERROR, $this->_gt('Input error. Please check your input.'));
+              $data['surferdata_check'] = $this->params['field_pcre'];
             }
-          } else {
-            // Existing title: update record
-            $id = $this->params['title_id'];
-            $this->databaseUpdateRecord(
-              $this->tableDataTitles, $data, 'surferdatatitle_id', $id
-            );
-            $this->addMsg(MSG_INFO, $this->_gt('Title updated.').': '.$this->params['title']);
           }
-        }
-        break;
-      case 'save_value' :
-        if ($this->module->hasPerm(4)) {
-          $this->saveValue();
-        }
-        break;
-      case 'del_value' :
-        if ($this->module->hasPerm(4)) {
-          $this->deleteValue();
-        }
-        break;
-      case 'move_value' :
-        if ($this->module->hasPerm(4)) {
-          $this->moveValue();
-        }
-        break;
-      case 'save_settings' :
-        if ($this->module->hasPerm(5)) {
-          $this->initSettingsForm();
-          if ($this->settingsDialog->checkDialogInput()) {
-            if (isset($this->params['idle_timeout'])) {
-              $this->setProperty('IDLE_TIMEOUT', $this->params['idle_timeout']);
-            }
-            if (isset($this->params['max_favorite_surfers'])) {
-              $this->setProperty('MAX_FAVORITE_SURFERS', $this->params['max_favorite_surfers']);
-            }
-            if (isset($this->params['avatar_general'])) {
-              $this->setProperty('AVATAR_GENERAL', $this->params['avatar_general']);
-            }
-            if (isset($this->params['avatar_female'])) {
-              $this->setProperty('AVATAR_FEMALE', $this->params['avatar_female']);
-            }
-            if (isset($this->params['avatar_male'])) {
-              $this->setProperty('AVATAR_MALE', $this->params['avatar_male']);
-            }
-            if (isset($this->params['avatar_default_size'])) {
-              $this->setProperty('AVATAR_DEFAULT_SIZE', $this->params['avatar_default_size']);
-            }
-            if (isset($this->params['password_min_length'])) {
-              $this->setProperty('PASSWORD_MIN_LENGTH', $this->params['password_min_length']);
-            }
-            if (isset($this->params['password_not_equals_handle'])) {
-              $this->setProperty(
-                'PASSWORD_NOT_EQUALS_HANDLE',
-                $this->params['password_not_equals_handle']
+          if (!$err) {
+            if ($new) {
+              // create new record
+              $fieldId = $this->databaseInsertRecord(
+                $this->tableData,
+                'surferdata_id',
+                $data
               );
-            }
-            if (isset($this->params['password_blacklist_check'])) {
-              $this->setProperty(
-                'PASSWORD_BLACKLIST_CHECK',
-                $this->params['password_blacklist_check']
+              if ($fieldId > 0) {
+                // This field is will get the highest order number
+                $this->orderDataFields($this->params['field_class'], $fieldId);
+                $this->addMsg(
+                  MSG_INFO,
+                  $this->_gt('Field created').': '.$this->params['field_name']
+                );
+              } else {
+                $this->addMsg(MSG_ERROR, $this->_gt('Input Error. Please check your input.'));
+              }
+            } else {
+              // Update record
+              $id = $this->params['data_id'];
+              $this->databaseUpdateRecord($this->tableData, $data, 'surferdata_id', $id);
+              $this->addMsg(
+                MSG_INFO,
+                $this->_gt('Field updated.').': '.$this->params['field_name']
               );
+              // Adjust order if category changed
+              if ($this->params['field_class'] != $this->params['field_class_old']) {
+                // Get the field's current order
+                $order = 0;
+                $sql = "SELECT surferdata_order
+                          FROM %s
+                         WHERE surferdata_id=%d";
+                $sqlParams = array($this->tableData, $id);
+                $res = $this->databaseQueryFmt($sql, $sqlParams);
+                if ($num = $res->fetchField()) {
+                  $order = $num;
+                }
+                // Close gap in the old category
+                $sql = "SELECT surferdata_id, surferdata_order
+                          FROM %s
+                         WHERE surferdata_class=%d
+                           AND surferdata_order>%d";
+                $sqlParams = array(
+                  $this->tableData,
+                  $this->params['field_class_old'],
+                  $order
+                );
+                $fields = array();
+                $res = $this->databaseQueryFmt($sql, $sqlParams);
+                while ($row = $res->fetchRow(DB_FETCHMODE_ASSOC)) {
+                  array_push(
+                    $fields,
+                    array(
+                      'id' => $row['surferdata_id'],
+                      'order' => $row['surferdata_order']
+                    )
+                  );
+                }
+                foreach ($fields as $field) {
+                  $data = array('surferdata_order' => $field['order'] - 1);
+                  $this->databaseUpdateRecord(
+                    $this->tableData,
+                    $data,
+                    'surferdata_id',
+                    $field['id']
+                  );
+                }
+                // Now assign the highest order number of the new category
+                // to the field
+                $this->orderDataFields($this->params['field_class'], $id);
+              }
             }
-            if (isset($this->params['freemail_delay'])) {
-              $this->setProperty(
-                'FREEMAIL_DELAY',
-                $this->params['freemail_delay']
-              );
-            }
-            if (isset($this->params['input_maxlength']) &&
-                is_numeric($this->params['input_maxlength'])) {
-              $this->setProperty('INPUT_MAXLENGTH', $this->params['input_maxlength']);
-            }
-            if (isset($this->params['textarea_lines']) &&
-                is_numeric($this->params['textarea_lines'])) {
-              $this->setProperty('TEXTAREA_LINES', $this->params['textarea_lines']);
-            }
-            if (isset($this->params['default_contact'])) {
-              $this->setProperty('DEFAULT_CONTACT', $this->params['default_contact']);
-            }
-            if (isset($this->params['path_cache_time'])) {
-              $this->setProperty('PATH_CACHE_TIME', $this->params['path_cache_time']);
-            }
-            $this->addMsg(MSG_INFO, $this->_gt('General settings changed.'));
-          } else {
-            $this->addMsg(MSG_ERROR, $this->_gt('Input error.'));
           }
-        }
-        break;
-      case 'cleanup_contacts':
-        // Search for all invalid contacts (e.g. deleted surfers) and remove them
-        $this->cleanupContacts();
-        break;
-      case 'clear_oldrequests':
-        // Clear old surfer registrations that have expired more than two weeks ago
-        list($numSurferIds, $numChangeRequests) = $this->clearOldRegistrations(14 * 86400);
-        $this->addMsg(
-          MSG_INFO,
-          sprintf(
-            $this->_gt('Deleted %d registration(s) and %d change request(s)'),
-            $numSurferIds,
-            $numChangeRequests
-          )
-        );
-        break;
-      case 'clear_cache':
-        $manager = contact_manager::getInstance();
-        $manager->clearContactCache();
-        $this->addMsg(MSG_INFO, $this->_gt('Removed old entries from contact path cache.'));
-        break;
-      case 'convert_contacts':
-        // Convert old one-way-contacts to the new, two-way format
-        $this->convertContacts();
-        break;
-      case 'convert_blacklist_entries':
-        $this->convertBlacklistEntries();
-        break;
-      case 'check_surfers_in_blacklist':
-        if (!$this->checkAllSurfersAgainstBlacklist()) {
-          $this->addMsg(
-            MSG_INFO,
-            $this->_gt('No entries.')
-          );
         }
       }
+      break;
+    case 'save_class' :
+      // Save a profile data category
+      if ($this->module->hasPerm(4, TRUE)) {
+        $this->saveDataClass();
+      }
+      break;
+    case 'save_title' :
+      // Save a profile field title
+      // Check whether a new title is created or an existing one is updated
+      if ($this->module->hasPerm(4, TRUE)) {
+        if (isset($this->params['create']) && $this->params['create'] == 1) {
+          $new = TRUE;
+        } else {
+          $new = FALSE;
+        }
+        // Get data for field update
+        $data = array(
+          'surferdatatitle_lang' => $this->params['language'],
+          'surferdatatitle_title' => $this->params['title']
+          );
+        if ($new) {
+          // New title
+          // Check whether there already is a title for this language
+          $sql = 'SELECT COUNT(*)
+                    FROM %s
+                   WHERE surferdatatitle_field=%d
+                     AND surferdatatitle_lang=%d';
+          $res = $this->databaseQueryFmt(
+            $sql,
+            array(
+              $this->tableDataTitles, $this->params['data_id'], $this->params['language']
+            )
+          );
+          if ($num = $res->fetchField()) {
+            if ($num > 0) {
+              // Found a title: Display error message, get out
+              $this->addMsg(
+                MSG_WARNING,
+                $this->_gt('Title already exists.').
+                sprintf(' in %s', $this->getLanguageTitle($this->params['language']))
+              );
+              return;
+            }
+          }
+          // Otherwise insert record
+          $data['surferdatatitle_field'] = $this->params['data_id'];
+          $success = $this->databaseInsertRecord(
+            $this->tableDataTitles,
+            'surferdatatitle_id',
+            $data);
+          if ($success) {
+            $this->addMsg(MSG_INFO, $this->_gt('Title created').': '. $this->params['title']);
+          } else {
+            $this->addMsg(MSG_ERROR, $this->_gt('Input error. Please check your input.'));
+          }
+        } else {
+          // Existing title: update record
+          $id = $this->params['title_id'];
+          $this->databaseUpdateRecord(
+            $this->tableDataTitles, $data, 'surferdatatitle_id', $id
+          );
+          $this->addMsg(MSG_INFO, $this->_gt('Title updated.').': '.$this->params['title']);
+        }
+      }
+      break;
+    case 'save_value' :
+      if ($this->module->hasPerm(4)) {
+        $this->saveValue();
+      }
+      break;
+    case 'del_value' :
+      if ($this->module->hasPerm(4)) {
+        $this->deleteValue();
+      }
+      break;
+    case 'move_value' :
+      if ($this->module->hasPerm(4)) {
+        $this->moveValue();
+      }
+      break;
+    case 'save_settings' :
+      if ($this->module->hasPerm(5)) {
+        $this->initSettingsForm();
+        if ($this->settingsDialog->checkDialogInput()) {
+          if (isset($this->params['idle_timeout'])) {
+            $this->setProperty('IDLE_TIMEOUT', $this->params['idle_timeout']);
+          }
+          if (isset($this->params['max_favorite_surfers'])) {
+            $this->setProperty('MAX_FAVORITE_SURFERS', $this->params['max_favorite_surfers']);
+          }
+          if (isset($this->params['avatar_general'])) {
+            $this->setProperty('AVATAR_GENERAL', $this->params['avatar_general']);
+          }
+          if (isset($this->params['avatar_female'])) {
+            $this->setProperty('AVATAR_FEMALE', $this->params['avatar_female']);
+          }
+          if (isset($this->params['avatar_male'])) {
+            $this->setProperty('AVATAR_MALE', $this->params['avatar_male']);
+          }
+          if (isset($this->params['avatar_default_size'])) {
+            $this->setProperty('AVATAR_DEFAULT_SIZE', $this->params['avatar_default_size']);
+          }
+          if (isset($this->params['password_min_length'])) {
+            $this->setProperty('PASSWORD_MIN_LENGTH', $this->params['password_min_length']);
+          }
+          if (isset($this->params['password_not_equals_handle'])) {
+            $this->setProperty(
+              'PASSWORD_NOT_EQUALS_HANDLE',
+              $this->params['password_not_equals_handle']
+            );
+          }
+          if (isset($this->params['password_blacklist_check'])) {
+            $this->setProperty(
+              'PASSWORD_BLACKLIST_CHECK',
+              $this->params['password_blacklist_check']
+            );
+          }
+          if (isset($this->params['freemail_delay'])) {
+            $this->setProperty(
+              'FREEMAIL_DELAY',
+              $this->params['freemail_delay']
+            );
+          }
+          if (isset($this->params['input_maxlength']) &&
+              is_numeric($this->params['input_maxlength'])) {
+            $this->setProperty('INPUT_MAXLENGTH', $this->params['input_maxlength']);
+          }
+          if (isset($this->params['textarea_lines']) &&
+              is_numeric($this->params['textarea_lines'])) {
+            $this->setProperty('TEXTAREA_LINES', $this->params['textarea_lines']);
+          }
+          if (isset($this->params['default_contact'])) {
+            $this->setProperty('DEFAULT_CONTACT', $this->params['default_contact']);
+          }
+          if (isset($this->params['path_cache_time'])) {
+            $this->setProperty('PATH_CACHE_TIME', $this->params['path_cache_time']);
+          }
+          $this->addMsg(MSG_INFO, $this->_gt('General settings changed.'));
+        } else {
+          $this->addMsg(MSG_ERROR, $this->_gt('Input error.'));
+        }
+      }
+      break;
+    case 'cleanup_contacts':
+      // Search for all invalid contacts (e.g. deleted surfers) and remove them
+      $this->cleanupContacts();
+      break;
+    case 'clear_oldrequests':
+      // Clear old surfer registrations that have expired more than two weeks ago
+      list($numSurferIds, $numChangeRequests) = $this->clearOldRegistrations(14 * 86400);
+      $this->addMsg(
+        MSG_INFO,
+        sprintf(
+          $this->_gt('Deleted %d registration(s) and %d change request(s)'),
+          $numSurferIds,
+          $numChangeRequests
+        )
+      );
+      break;
+    case 'clear_cache':
+      $manager = contact_manager::getInstance();
+      $manager->clearContactCache();
+      $this->addMsg(MSG_INFO, $this->_gt('Removed old entries from contact path cache.'));
+      break;
+    case 'convert_contacts':
+      // Convert old one-way-contacts to the new, two-way format
+      $this->convertContacts();
+      break;
+    case 'convert_blacklist_entries':
+      $this->convertBlacklistEntries();
+      break;
+    case 'check_surfers_in_blacklist':
+      if (!$this->checkAllSurfersAgainstBlacklist()) {
+        $this->addMsg(
+          MSG_INFO,
+          $this->_gt('No entries.')
+        );
+      }
+      break;
+    default:
+      $surfMode = isset($this->params['surfmode']) ? $this->params['surfmode'] : 0;
+      if ($surfMode == 5 && isset($this->params['id']) && ($this->params['id'] != '')) {
+        $this->editSurfer = $this->loadSurfer($this->params['id']);
+        if (isset($this->editSurfer) && is_array($this->editSurfer)) {
+          $tags = papaya_taglinks::getInstance($this, 'tg');
+          $tags->escapeLinkSeparator = FALSE;
+          $tags->tagType = 'surfers';
+          $tags->setLinkParams(
+            $this->paramName,
+            [
+              'id' => $this->editSurfer['surfer_id'],
+              // 'cmd' => isset($this->params['cmd']) ? $this->params['cmd'] : 'tags',
+              'mode' => isset($this->params['mode']) ? $this->params['mode'] : 0,
+              'surfmode' => isset($this->params['surfmode']) ? $this->params['surfmode'] : 5
+            ]
+        );
+          if (isset($tags) && $tags->prepare('surfers', $this->editSurfer['surfer_id'])) {
+            $tags->execute();
+            $this->layout->add($tags->getXml());
+          }
+        }
+      }
+      break;
     }
     // Load group list
     $adminGroups = $this->getAdminGroups();
@@ -5097,6 +5124,7 @@ class surfer_admin_edit extends surfer_admin {
       $basicDataMode = FALSE;
       $changeRequestMode = FALSE;
       $profileDataMode = FALSE;
+      $tagMode = FALSE;
       $contactMode = FALSE;
       $blockMode = FALSE;
       // If surfmode parameter is set ...
@@ -5117,6 +5145,10 @@ class surfer_admin_edit extends surfer_admin {
       case 4:
         // Manage surfer's block and bookmark list in surfmode 4
         $blockMode = TRUE;
+        break;
+      case 5:
+        // Tags
+        $tagMode = TRUE;
         break;
       case 0:
       default:
@@ -5188,6 +5220,19 @@ class surfer_admin_edit extends surfer_admin {
         'status-user-locked',
         '',
         $blockMode
+      );
+      $toolbar->addButton(
+        'Tags',
+        $this->getLink(
+          array(
+            'surfmode' => 5,
+            'cmd' => 'tags',
+            'id' => $surfer['surfer_id']
+          )
+        ),
+        'items-tag',
+        '',
+        $tagMode
       );
       if ($mode == 'edit') {
         $toolbar->addSeperator();
