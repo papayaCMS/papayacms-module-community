@@ -580,6 +580,49 @@ class surfer_admin extends base_db {
   }
 
   /**
+  * Get surfer IDs by tags assigned to surfers
+  *
+  * @param array $tags
+  * @return array
+  */
+  function getIdsByTags($tags) {
+    $result = [];
+    $sql = "SELECT link_id, link_type, tag_id, link_priority
+              FROM %s
+             WHERE link_type = 'surfers'
+               AND ".str_replace('%', '%%', $this->databaseGetSqlCondition('tag_id', $tags))
+                 . " ORDER BY link_priority DESC";
+    $parameters = [$this->databaseGetTableName('tag_links')];
+    if ($res = $this->databaseQueryFmt($sql, $parameters)) {
+      while ($row = $res->fetchRow(DB_FETCHMODE_ASSOC)) {
+        $result[] = $row['link_id'];
+      }
+    }
+    return array_unique($result);
+  }
+
+  /**
+  * Get surfer IDs by tags assigned to surfers and a topic ID
+  *
+  * @param integer $topicId
+  * @return array
+  */
+  function getIdsByTopicTags($topicId) {
+    $topicTags = [];
+    $sql = "SELECT tag_id, link_id, link_type
+              FROM %s
+             WHERE link_type = 'topic'
+               AND link_id = '%d'";
+    $parameters = [$this->databaseGetTableName('tag_links'), $topicId];
+    if ($res = $this->databaseQueryFmt($sql, $parameters)) {
+      while ($row = $res->fetchRow(DB_FETCHMODE_ASSOC)) {
+        $topicTags[] = $row['tag_id'];
+      }
+    }
+    return $this->getIdsByTags($topicTags);
+  }
+
+  /**
   * Get surfer email by id.
   *
   * Looks up and returns the email address for a surfer ID you provide as an argument.
