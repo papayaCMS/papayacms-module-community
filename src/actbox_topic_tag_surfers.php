@@ -169,21 +169,25 @@ class actionbox_topic_tag_surfers extends base_actionbox {
     foreach ($data as $surferId => $surferData) {
       $result .= sprintf('<surfer id="%s">'.LF, $surferId);
       foreach ($surferData as $field => $value) {
+        $additional = '';
         $title = isset($this->data['caption_'.$field]) ?
           papaya_strings::escapeHTMLChars($this->data['caption_'.$field]) :
           papaya_strings::escapeHTMLChars($field);
         if ($field == 'surfer_gender') {
           if ($value == 'f' && isset($this->data['caption_gender_f'])) {
             $value = $this->data['caption_gender_f'];
+            $additional = ' rawvalue="f"';
           } elseif ($value == 'm' && isset($this->data['caption_gender_m'])) {
             $value = $this->data['caption_gender_m'];
+            $additional = ' rawvalue="m"';
           }
         }
         $result .= sprintf(
-          '<field name="%s" title="%s" value="%s"/>'.LF,
+          '<field name="%s" title="%s" value="%s"%s/>'.LF,
           papaya_strings::escapeHTMLChars($field),
           $title,
-          papaya_strings::escapeHTMLChars($value)
+          papaya_strings::escapeHTMLChars($value),
+          $additional
         );
       }
       if (isset($dynamicData[$surferId])) {
