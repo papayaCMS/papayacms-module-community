@@ -174,7 +174,7 @@ class content_profile_change_confirmation extends base_content {
   * @access public
   * @return string
   */
-  function getParsedData() {
+  function getParsedData($parseParams = NULL) {
     $result = '';
     $this->setDefaultData();
     $this->initializeParams();

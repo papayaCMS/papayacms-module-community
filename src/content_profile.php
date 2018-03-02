@@ -1230,7 +1230,7 @@ class content_profile extends base_content {
   * @access public
   * @return string
   */
-  function getParsedData() {
+  function getParsedData($parseParams = NULL) {
     $result = '';
     $saveSuccess = FALSE;
     $this->setDefaultData();

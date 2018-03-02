@@ -85,7 +85,7 @@ class content_avatarupload extends base_content {
   /**
    * Returns the xml document with the contents of the avatar upload form page.
    */
-  function getParsedData() {
+  function getParsedData($parseParams = NULL) {
     $result = sprintf(
       '<title>%s</title>'.LF.
       '<text>%s</text>'.LF,

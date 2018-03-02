@@ -520,7 +520,7 @@ class content_login extends base_content {
   * @access public
   * @return string $result XML
   */
-  function getParsedData() {
+  function getParsedData($parseParams = NULL) {
     $this->setDefaultData();
     $result = sprintf(
       '<title encoded="%s">%s</title>'.LF,

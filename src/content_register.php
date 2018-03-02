@@ -940,7 +940,7 @@ class content_register extends base_content {
   * @access public
   * @return string
   */
-  function getParsedData() {
+  function getParsedData($parseParams = NULL) {
     $this->setDefaultData();
     $result = sprintf(
       '<title>%s</title>'.LF,

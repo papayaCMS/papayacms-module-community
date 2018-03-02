@@ -219,7 +219,7 @@ class content_contact extends base_content {
   * @access public
   * @return string
   */
-  function getParsedData() {
+  function getParsedData($parseParams = NULL) {
     $this->setDefaultData();
     $this->initializeParams();
     // Assume that there is no category change

@@ -111,7 +111,7 @@ class content_contact_list extends base_content {
   * @access public
   * @return string $result XML
   */
-  function getParsedData() {
+  function getParsedData($parseParams = NULL) {
     $result = '<contacts>'.LF;
     $surferId = '';
     if (isset($this->params['surfer_handle']) &&

@@ -185,7 +185,7 @@ class content_showuser_list extends base_content {
   * @access public
   * @return string
   */
-  function getParsedData() {
+  function getParsedData($parseParams = NULL) {
     $this->setDefaultData();
     $this->surferObj = $this->papaya()->surfer;
     $result = '';

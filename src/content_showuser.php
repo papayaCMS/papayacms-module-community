@@ -90,7 +90,7 @@ class content_showuser extends base_content {
   * @access public
   * @return string $result Content XML
   */
-  function getParsedData() {
+  function getParsedData($parseParams = NULL) {
     $this->setDefaultData();
     $this->initializeParams();
     $this->baseLink = $this->getBaseLink();
