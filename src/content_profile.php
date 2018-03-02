@@ -1691,7 +1691,7 @@ class content_profile extends base_content {
   *
   * @return string
   */
-  function getParsedTeaser() {
+  function getParsedTeaser($parseParams = NULL) {
     $this->setDefaultData();
     $this->initializeParams();
     $result = sprintf(
