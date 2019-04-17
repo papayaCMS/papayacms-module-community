@@ -2429,26 +2429,37 @@ class surfer_admin_edit extends surfer_admin {
   * @return boolean
   */
   function checkInputs($ignoreIllegal = FALSE) {
+    if (!isset($this->editSurfer)) {
+      $result = FALSE;
+      $this->addMsg(MSG_ERROR, $this->_gt('Surfer not available.'));
+    }
+    $parameters = new Papaya\Request\Parameters($this->params);
     // Assume that all inputs are correct
     $result = TRUE;
     // Compare password and its repetition
-    if ($this->params['surfer_password'] != $this->params['surfer_password2']) {
+    if (
+      $parameters['surfer_password'] != $parameters['surfer_password2']
+    ) {
       $result = FALSE;
       $this->addMsg(MSG_ERROR, $this->_gt('Password inputs didn\'t match.'));
     }
     // Check whether a changed surfer handle exists or not
-    if ($this->editSurfer['surfer_handle'] != $this->params['surfer_handle'] &&
-        ($this->getIdByHandle($this->params['surfer_handle'], TRUE) != '')) {
+    if (
+      $this->editSurfer['surfer_handle'] != $parameters['surfer_handle'] &&
+      ($this->getIdByHandle($parameters['surfer_handle'], TRUE) != '')
+    ) {
       $result = FALSE;
       $this->addMsg(MSG_ERROR, $this->_gt('Login name already in use.'));
     }
     // Check whether a changed email address
     // (with more than just a change of capitalization)
     // exists or not
-    if ($ignoreIllegal == FALSE) {
-      if (strtolower($this->editSurfer['surfer_email']) !=
-          strtolower($this->params['surfer_email']) &&
-          $this->existEmail($this->params['surfer_email'], TRUE)) {
+    if (!$ignoreIllegal) {
+      if (
+        !empty($parameters['surfer_email']) &&
+        strtolower($this->editSurfer['surfer_email']) != strtolower($parameters['surfer_email']) &&
+        $this->existEmail($parameters['surfer_email'], TRUE)
+      ) {
         $result = FALSE;
         $this->addMsg(MSG_ERROR, $this->_gt('Email address already in use.'));
       }
